@@ -1,5 +1,6 @@
 #-----------------------------------------------------------------------------
 set(MODULE_NAME PlusRemote)
+string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
 
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS
@@ -15,6 +16,9 @@ set(MODULE_PYTHON_RESOURCES
   Resources/Icons/VisibleOn.png
   )
 
+add_subdirectory(MRML)
+add_subdirectory(Widgets)
+  
 #-----------------------------------------------------------------------------
 slicerMacroBuildScriptedModule(
   NAME ${MODULE_NAME}

@@ -82,6 +82,18 @@ class PlusRemoteWidget(ScriptedLoadableModuleWidget):
     self.parameterNodeSelector.setToolTip( "Pick parameter set" )
     defaultParametersLayout.addRow("Parameter set: ", self.parameterNodeSelector)
 
+    plusLauncherRemoteCollapsibleButton = ctk.ctkCollapsibleButton()
+    plusLauncherRemoteCollapsibleButton.text = "Plus Server Launcher"
+    self.layout.addWidget(plusLauncherRemoteCollapsibleButton)
+    
+    self.plusLauncherRemoteWidget = slicer.qMRMLPlusLauncherRemoteWidget()
+    #self.plusLauncherRemoteWidget.setAdvancedOptionsVisible(False)
+    self.plusLauncherRemoteWidget.setMRMLScene(slicer.mrmlScene)
+    self.plusLauncherRemoteReferenceID = 'PlusLauncherRemoteParameters'
+    
+    plusLauncherRemoteLayout = qt.QFormLayout(plusLauncherRemoteCollapsibleButton)
+    plusLauncherRemoteLayout.addRow(self.plusLauncherRemoteWidget)
+
     # Parameters
     parametersCollapsibleButton = ctk.ctkCollapsibleButton()
     parametersCollapsibleButton.text = "Parameters"
@@ -590,6 +602,18 @@ class PlusRemoteWidget(ScriptedLoadableModuleWidget):
       # Set up default values for new nodes
       self.logic.setDefaultParameters(self.parameterNode)
       self.parameterNodeObserver = self.parameterNode.AddObserver('currentNodeChanged(vtkMRMLNode*)', self.updateGuiFromParameterNode)
+
+      self.plusRemoteLauncherId = self.parameterNode.GetNodeReferenceID(self.plusLauncherRemoteReferenceID)
+      self.plusRemoteLauncherNode = None
+      if (self.plusRemoteLauncherId):
+        self.plusRemoteLauncherNode = slicer.mrmlScene.GetNodeByID(self.plusRemoteLauncherId)
+
+      if (self.plusRemoteLauncherNode is None):
+        self.plusRemoteLauncherNode = slicer.vtkMRMLPlusRemoteLauncherNode()
+        slicer.mrmlScene.AddNode(self.plusRemoteLauncherNode)
+        self.parameterNode.SetNodeReferenceID(self.plusLauncherRemoteReferenceID, self.plusRemoteLauncherNode.GetID())
+
+      self.plusLauncherRemoteWidget.setPlusRemoteLauncherNode(self.plusRemoteLauncherNode)
     self.updateGuiFromParameterNode()
 
   def updateGuiFromParameterNode(self):

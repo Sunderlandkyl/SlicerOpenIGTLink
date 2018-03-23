@@ -1,0 +1,9 @@
+<!DOCTYPE RCC><RCC version="1.0">
+  <qresource>
+    <file>Icons/PlusLauncherRemoteConnect.png</file>
+    <file>Icons/PlusLauncherRemoteDotGreen.png</file>
+    <file>Icons/PlusLauncherRemoteDotGrey.png</file>
+    <file>Icons/PlusLauncherRemoteDotOrange.png</file>
+    <file>Icons/PlusLauncherRemoteDotRed.png</file>
+  </qresource>
+</RCC>
