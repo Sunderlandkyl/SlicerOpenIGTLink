@@ -35,12 +35,14 @@
 #include <vtkMRMLAbstractLogic.h>
 #include <vtkXMLDataElement.h>
 #include <vtkXMLUtilities.h>
+#include <vtkCollection.h>
 
 // MRML includes
 #include <vtkMRMLScene.h>
 
 // OpenIGTLinkIF includes
 #include <vtkMRMLTextNode.h>
+#include <vtkMRMLTextStorageNode.h>
 #include <vtkMRMLIGTLConnectorNode.h>
 #include <vtkSlicerOpenIGTLinkCommand.h>
 
@@ -451,12 +453,17 @@ void qMRMLPlusLauncherRemoteWidget::onLoadConfigFile()
   QFileInfo fileInfo(file);
   std::string name = fileInfo.fileName().toStdString();
   QString contents = file.readAll();
-
   vtkSmartPointer<vtkMRMLTextNode> configFileNode = vtkSmartPointer<vtkMRMLTextNode>::New();
+  configFileNode->SaveWithSceneOn();
   configFileNode->SetAttribute(CONFIG_FILE_NODE_ATTRIBUTE, "true");
-  configFileNode->SetText(contents.toStdString().c_str());
-  configFileNode->SetName(name.c_str());
   this->mrmlScene()->AddNode(configFileNode);
+  //configFileNode->SetText(contents.toStdString().c_str());
+  configFileNode->SetName(name.c_str());
+  configFileNode->AddDefaultStorageNode(name.c_str());
+  std::string stringFilename = filename.toStdString();
+  configFileNode->GetStorageNode()->SetFileName(stringFilename.c_str());
+  configFileNode->GetStorageNode()->ReadData(configFileNode, true);
+
 }
 
 //-----------------------------------------------------------------------------
