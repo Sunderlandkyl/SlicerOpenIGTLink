@@ -116,7 +116,6 @@ void qMRMLPlusLauncherRemoteWidgetPrivate::init()
   Q_Q(qMRMLPlusLauncherRemoteWidget);
   this->setupUi(q);
 
-  this->portLineEdit->setValidator(new QIntValidator(0, 65535, this->portLineEdit));
   this->configFileSelectorComboBox->addAttribute("vtkMRMLTextNode", CONFIG_FILE_NODE_ATTRIBUTE);
 
   QObject::connect(this->launcherConnectCheckBox, SIGNAL(toggled(bool)), q, SLOT(onConnectCheckBoxChanged(bool)));
@@ -227,7 +226,6 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
   d->launcherConnectCheckBox->blockSignals(checkBoxSignals);
 
   d->hostnameLineEdit->setEnabled(!connectionEnabled);
-  d->portLineEdit->setEnabled(!connectionEnabled);
 
   vtkMRMLTextNode* configFileNode = d->ParameterSetNode->GetCurrentConfigNode();
   if (configFileNode)
@@ -247,34 +245,34 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
     {
       if (d->launcherErrorLevel == LOG_LEVEL_ERROR)
       {
-        d->launcherStatusLabel->setPixmap(d->IconRedDot);
+        d->launcherStatusButton->setIcon(d->IconRedDot);
       }
       else if (d->launcherErrorLevel == LOG_LEVEL_WARNING)
       {
-        d->launcherStatusLabel->setPixmap(d->IconOrangeDot);
+        d->launcherStatusButton->setIcon(d->IconOrangeDot);
       }
       else
       {
-        d->launcherStatusLabel->setPixmap(d->IconGreenDot);
+        d->launcherStatusButton->setIcon(d->IconGreenDot);
       }
     }
     else
     {
-      d->launcherStatusLabel->setPixmap(d->IconGreyDot);
+      d->launcherStatusButton->setIcon(d->IconGreyDot);
     }
   }
   else
   {
-    d->launcherStatusLabel->setPixmap(d->IconGreyDot);
+    d->launcherStatusButton->setIcon(d->IconGreyDot);
   }
 
   bool configFileSelected = configFileNode != NULL;
 
   std::string hostname = d->ParameterSetNode->GetHostname();
-  d->hostnameLineEdit->setText(QString::fromStdString(hostname));
-
   int port = d->ParameterSetNode->GetServerLauncherPort();
-  d->portLineEdit->setText(QString::number(port));
+  std::stringstream hostnameAndPort;
+  hostnameAndPort << hostname << ":" << port;
+  d->hostnameLineEdit->setText(QString::fromStdString(hostnameAndPort.str()));
 
   ///
   int serverState = d->ParameterSetNode->GetServerState();
@@ -286,34 +284,24 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
     d->startStopServerButton->setText("Launch server");
     d->configFileSelectorComboBox->setEnabled(true);
     d->logLevelComboBox->setEnabled(true);
-    d->serverStatusLabel->setPixmap(d->IconGreyDot);
     break;
   case vtkMRMLPlusRemoteLauncherNode::ServerRunning:
     d->startStopServerButton->setEnabled(true);
     d->startStopServerButton->setText("Stop server");
     d->configFileSelectorComboBox->setDisabled(true);
     d->logLevelComboBox->setDisabled(true);
-    if (d->serverErrorLevel == LOG_LEVEL_WARNING)
-      d->serverStatusLabel->setPixmap(d->IconOrangeDot);
-    else if (d->serverErrorLevel == LOG_LEVEL_ERROR)
-      d->serverStatusLabel->setPixmap(d->IconRedDot);
-    else
-      d->serverStatusLabel->setPixmap(d->IconGreenDot);
-
     break;
   case vtkMRMLPlusRemoteLauncherNode::ServerStarting:
     d->startStopServerButton->setDisabled(true);
     d->startStopServerButton->setText("Launching...");
     d->configFileSelectorComboBox->setDisabled(true);
     d->logLevelComboBox->setDisabled(true);
-    d->serverStatusLabel->setPixmap(d->IconGreyDot);
     break;
   case vtkMRMLPlusRemoteLauncherNode::ServerStopping:
     d->startStopServerButton->setDisabled(true);
     d->startStopServerButton->setText("Stopping...");
     d->configFileSelectorComboBox->setDisabled(true);
     d->logLevelComboBox->setDisabled(true);
-    d->serverStatusLabel->setPixmap(d->IconGreyDot);
     break;
   }
 
@@ -331,11 +319,36 @@ void qMRMLPlusLauncherRemoteWidget::onConnectCheckBoxChanged(bool connect)
 {
   Q_D(qMRMLPlusLauncherRemoteWidget);
 
-  std::string hostnameString = d->hostnameLineEdit->text().toStdString();
-  d->ParameterSetNode->SetHostname(hostnameString);
-  const char* hostname = hostnameString.c_str();
+  std::string hostnameAndPort = d->hostnameLineEdit->text().toStdString();
+  std::vector<std::string> tokens = std::vector<std::string>();
+  std::istringstream ss(hostnameAndPort);
+  std::string item;
+  while (std::getline(ss, item, ':'))
+  {
+    if (!item.empty())
+    {
+      tokens.push_back(item);
+    }
+  }
 
-  int port = d->portLineEdit->text().toInt();
+  const char* hostname = "localhost";
+  int port = 18904;
+  if (tokens.size() == 1)
+  {
+    hostname = tokens[0].c_str();
+  }
+  else if (tokens.size() > 1)
+  {
+    hostname = tokens[0].c_str();
+    bool success = false;
+    port = QVariant(tokens[1].c_str()).toInt(&success);
+    if (!success)
+    {
+      port = 18904;
+    }
+  }
+  
+  d->ParameterSetNode->SetHostname(hostname);
   d->ParameterSetNode->SetServerLauncherPort(port);
 
   vtkMRMLIGTLConnectorNode* launcherConnectorNode = NULL;
