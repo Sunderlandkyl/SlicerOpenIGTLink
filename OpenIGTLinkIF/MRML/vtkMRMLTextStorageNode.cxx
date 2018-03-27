@@ -94,7 +94,9 @@ int vtkMRMLTextStorageNode::WriteDataInternal(vtkMRMLNode *refNode)
 
     // cast the input node
     vtkMRMLTextNode *textNode =
-      vtkMRMLTextNode::SafeDownCast(textNode);
+      vtkMRMLTextNode::SafeDownCast(refNode);
+
+    // TODO
 
     return 1;
 }

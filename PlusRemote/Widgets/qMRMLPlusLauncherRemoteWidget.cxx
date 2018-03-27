@@ -243,6 +243,8 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
     d->configFileTextEdit->setText("");
   }
 
+  std::string tooltipSuffix = " Click to view log.";
+
   bool connected = state == vtkMRMLIGTLConnectorNode::StateConnected;
   if (connectionEnabled)
   {
@@ -254,31 +256,45 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
       {
         case vtkMRMLPlusRemoteLauncherNode::ServerRunning:
           if (d->launcherErrorLevel == LOG_LEVEL_INFO)
+          {
             d->launcherStatusButton->setIcon(d->IconRunning);
+            d->launcherStatusButton->setToolTip(QString::fromStdString("Server runnning." + tooltipSuffix));
+          }
           else if (d->launcherErrorLevel == LOG_LEVEL_ERROR)
+          {
             d->launcherStatusButton->setIcon(d->IconRunningError);
+            d->launcherStatusButton->setToolTip(QString::fromStdString("Server runnning. Error detected. " + tooltipSuffix));
+          }
           else if (d->launcherErrorLevel == LOG_LEVEL_WARNING)
             d->launcherStatusButton->setIcon(d->IconRunningWarning);
+            d->launcherStatusButton->setToolTip(QString::fromStdString("Server runnning. Warning detected. " + tooltipSuffix));
           break;
         case vtkMRMLPlusRemoteLauncherNode::ServerStarting:
+          d->launcherStatusButton->setIcon(d->IconWaiting);
+          d->launcherStatusButton->setToolTip(QString::fromStdString("Server starting. " + tooltipSuffix));
+          break;
         case vtkMRMLPlusRemoteLauncherNode::ServerStopping:
           d->launcherStatusButton->setIcon(d->IconWaiting);
+          d->launcherStatusButton->setToolTip(QString::fromStdString("Server stopping. " + tooltipSuffix));
           break;
         case vtkMRMLPlusRemoteLauncherNode::ServerOff:
         default:
           d->launcherStatusButton->setIcon(d->IconConnected);
+          d->launcherStatusButton->setToolTip(QString::fromStdString("Launcher connected. " + tooltipSuffix));
           break;
       }
     }
     else
     {
       d->launcherStatusButton->setIcon(d->IconNotConnected);
+      d->launcherStatusButton->setToolTip(QString::fromStdString("Launcher not connected. " + tooltipSuffix));
     }
 
   }
   else
   {
     d->launcherStatusButton->setIcon(d->IconDisconnected);
+    d->launcherStatusButton->setToolTip(QString::fromStdString("Launcher disconnected. " + tooltipSuffix));
   }
 
   bool configFileSelected = configFileNode != NULL;
@@ -482,16 +498,20 @@ void qMRMLPlusLauncherRemoteWidget::onLoadConfigFile()
   std::string name = fileInfo.fileName().toStdString();
   QString contents = file.readAll();
   vtkSmartPointer<vtkMRMLTextNode> configFileNode = vtkSmartPointer<vtkMRMLTextNode>::New();
+  configFileNode->SetName(name.c_str());
   configFileNode->SaveWithSceneOn();
   configFileNode->SetAttribute(CONFIG_FILE_NODE_ATTRIBUTE, "true");
   this->mrmlScene()->AddNode(configFileNode);
-  //configFileNode->SetText(contents.toStdString().c_str());
-  configFileNode->SetName(name.c_str());
-  configFileNode->AddDefaultStorageNode(name.c_str());
-  std::string stringFilename = filename.toStdString();
-  configFileNode->GetStorageNode()->SetFileName(stringFilename.c_str());
-  configFileNode->GetStorageNode()->ReadData(configFileNode, true);
 
+  vtkSmartPointer<vtkMRMLTextStorageNode> configFileStorageNode = vtkSmartPointer<vtkMRMLTextStorageNode>::New();
+  std::string storageNodeName = name + "_StorageNode";
+  configFileStorageNode->SetName(storageNodeName.c_str());
+  this->mrmlScene()->AddNode(configFileStorageNode);
+  configFileNode->SetAndObserveStorageNodeID(configFileStorageNode->GetID());
+
+  std::string stringFilename = filename.toStdString();
+  configFileStorageNode->SetFileName(stringFilename.c_str());
+  configFileStorageNode->ReadData(configFileNode, true);
 }
 
 //-----------------------------------------------------------------------------
