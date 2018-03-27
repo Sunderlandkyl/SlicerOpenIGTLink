@@ -43,7 +43,6 @@ class Q_SLICER_MODULE_PLUSREMOTE_WIDGETS_EXPORT qMRMLPlusLauncherRemoteWidget : 
   Q_OBJECT
   QVTK_OBJECT
   Q_PROPERTY(bool logVisible READ logVisible WRITE setLogVisible)
-  Q_PROPERTY(bool advancedOptionsVisible READ advancedOptionsVisible WRITE setAdvancedOptionsVisible)
 
 public:
   typedef qMRMLWidget Superclass;
@@ -91,10 +90,6 @@ public slots:
   void onLauncherConnectorNodeModified();
 
   void setPlusRemoteLauncherNode(vtkMRMLPlusRemoteLauncherNode*);
-
-  /// Show/hide the advanced options section
-  bool advancedOptionsVisible() const;
-  void setAdvancedOptionsVisible(bool);
 
 protected:
   QScopedPointer<qMRMLPlusLauncherRemoteWidgetPrivate> d_ptr;

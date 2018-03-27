@@ -84,10 +84,13 @@ public:
 
   vtkSmartPointer<vtkMRMLTextNode> LogTextNode;
 
-  QPixmap IconGreenDot;
-  QPixmap IconGreyDot;
-  QPixmap IconOrangeDot;
-  QPixmap IconRedDot;
+  QPixmap IconDisconnected;
+  QPixmap IconNotConnected;
+  QPixmap IconConnected;
+  QPixmap IconWaiting;
+  QPixmap IconRunning;
+  QPixmap IconRunningWarning;
+  QPixmap IconRunningError;
 
   int serverErrorLevel;
   int launcherErrorLevel;
@@ -99,10 +102,13 @@ qMRMLPlusLauncherRemoteWidgetPrivate::qMRMLPlusLauncherRemoteWidgetPrivate(qMRML
   : q_ptr(&object)
   , LauncherConnectorNode(NULL)
 {
-  this->IconGreenDot = QPixmap(":/Icons/PlusLauncherRemoteDotGreen.png");
-  this->IconGreyDot = QPixmap(":/Icons/PlusLauncherRemoteDotGrey.png");
-  this->IconOrangeDot = QPixmap(":/Icons/PlusLauncherRemoteDotOrange.png");
-  this->IconRedDot = QPixmap(":/Icons/PlusLauncherRemoteDotRed.png");
+  this->IconDisconnected = QPixmap(":/Icons/PlusLauncherRemoteDisconnected.png");
+  this->IconNotConnected = QPixmap(":/Icons/PlusLauncherRemoteNotConnected.png");
+  this->IconConnected = QPixmap(":/Icons/PlusLauncherRemoteConnect.png");
+  this->IconWaiting = QPixmap(":/Icons/PlusLauncherRemoteWaitForConnection.png");
+  this->IconRunning = QPixmap(":/Icons/PlusLauncherRemoteRunning.png");
+  this->IconRunningWarning = QPixmap(":/Icons/PlusLauncherRemoteRunningWarning.png");
+  this->IconRunningError = QPixmap(":/Icons/PlusLauncherRemoteRunningError.png");
 }
 
 //-----------------------------------------------------------------------------
@@ -238,32 +244,41 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
   }
 
   bool connected = state == vtkMRMLIGTLConnectorNode::StateConnected;
-
   if (connectionEnabled)
   {
+
     if (connected)
     {
-      if (d->launcherErrorLevel == LOG_LEVEL_ERROR)
+      int serverState = d->ParameterSetNode->GetServerState();
+      switch (serverState)
       {
-        d->launcherStatusButton->setIcon(d->IconRedDot);
-      }
-      else if (d->launcherErrorLevel == LOG_LEVEL_WARNING)
-      {
-        d->launcherStatusButton->setIcon(d->IconOrangeDot);
-      }
-      else
-      {
-        d->launcherStatusButton->setIcon(d->IconGreenDot);
+        case vtkMRMLPlusRemoteLauncherNode::ServerRunning:
+          if (d->launcherErrorLevel == LOG_LEVEL_INFO)
+            d->launcherStatusButton->setIcon(d->IconRunning);
+          else if (d->launcherErrorLevel == LOG_LEVEL_ERROR)
+            d->launcherStatusButton->setIcon(d->IconRunningError);
+          else if (d->launcherErrorLevel == LOG_LEVEL_WARNING)
+            d->launcherStatusButton->setIcon(d->IconRunningWarning);
+          break;
+        case vtkMRMLPlusRemoteLauncherNode::ServerStarting:
+        case vtkMRMLPlusRemoteLauncherNode::ServerStopping:
+          d->launcherStatusButton->setIcon(d->IconWaiting);
+          break;
+        case vtkMRMLPlusRemoteLauncherNode::ServerOff:
+        default:
+          d->launcherStatusButton->setIcon(d->IconConnected);
+          break;
       }
     }
     else
     {
-      d->launcherStatusButton->setIcon(d->IconGreyDot);
+      d->launcherStatusButton->setIcon(d->IconNotConnected);
     }
+
   }
   else
   {
-    d->launcherStatusButton->setIcon(d->IconGreyDot);
+    d->launcherStatusButton->setIcon(d->IconDisconnected);
   }
 
   bool configFileSelected = configFileNode != NULL;
@@ -278,13 +293,6 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
   int serverState = d->ParameterSetNode->GetServerState();
   switch (serverState)
   {
-  case vtkMRMLPlusRemoteLauncherNode::ServerOff:
-  default:
-    d->startStopServerButton->setEnabled(connected && configFileSelected);
-    d->startStopServerButton->setText("Launch server");
-    d->configFileSelectorComboBox->setEnabled(true);
-    d->logLevelComboBox->setEnabled(true);
-    break;
   case vtkMRMLPlusRemoteLauncherNode::ServerRunning:
     d->startStopServerButton->setEnabled(true);
     d->startStopServerButton->setText("Stop server");
@@ -302,6 +310,13 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
     d->startStopServerButton->setText("Stopping...");
     d->configFileSelectorComboBox->setDisabled(true);
     d->logLevelComboBox->setDisabled(true);
+    break;
+  case vtkMRMLPlusRemoteLauncherNode::ServerOff:
+  default:
+    d->startStopServerButton->setEnabled(connected && configFileSelected);
+    d->startStopServerButton->setText("Launch server");
+    d->configFileSelectorComboBox->setEnabled(true);
+    d->logLevelComboBox->setEnabled(true);
     break;
   }
 
@@ -347,7 +362,7 @@ void qMRMLPlusLauncherRemoteWidget::onConnectCheckBoxChanged(bool connect)
       port = 18904;
     }
   }
-  
+
   d->ParameterSetNode->SetHostname(hostname);
   d->ParameterSetNode->SetServerLauncherPort(port);
 
@@ -726,16 +741,16 @@ void qMRMLPlusLauncherRemoteWidget::onLogMessageCommand(vtkXMLDataElement* messa
 
     const char* messageOrigin = nestedElement->GetAttribute("Origin");
     bool logLevelChanged = false;
-    if (messageOrigin && strcmp(messageOrigin, "SERVER") == 0)
+    //if (messageOrigin && strcmp(messageOrigin, "SERVER") == 0)
     {
       if (logLevel < d->serverErrorLevel)
       {
         d->serverErrorLevel = logLevel;
         logLevelChanged = true;
       }
-    }
-    else
-    {
+    //}
+    //else
+    //{
       if (logLevel < d->launcherErrorLevel)
       {
         d->launcherErrorLevel = logLevel;
@@ -865,20 +880,6 @@ vtkMRMLIGTLConnectorNode* qMRMLPlusLauncherRemoteWidget::createConnectorNode(con
   launcherConnectorNode->Start();
 
   return launcherConnectorNode;
-}
-
-//-----------------------------------------------------------------------------
-bool qMRMLPlusLauncherRemoteWidget::advancedOptionsVisible() const
-{
-  Q_D(const qMRMLPlusLauncherRemoteWidget);
-  return d->advancedGroupBox->isVisible();
-}
-
-//-----------------------------------------------------------------------------
-void qMRMLPlusLauncherRemoteWidget::setAdvancedOptionsVisible(bool visible)
-{
-  Q_D(qMRMLPlusLauncherRemoteWidget);
-  d->advancedGroupBox->setVisible(visible);
 }
 
 //-----------------------------------------------------------------------------
