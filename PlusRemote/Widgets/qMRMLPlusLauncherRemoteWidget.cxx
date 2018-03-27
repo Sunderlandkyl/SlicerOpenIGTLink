@@ -495,23 +495,52 @@ void qMRMLPlusLauncherRemoteWidget::onLoadConfigFile()
   }
 
   QFileInfo fileInfo(file);
-  std::string name = fileInfo.fileName().toStdString();
-  QString contents = file.readAll();
   vtkSmartPointer<vtkMRMLTextNode> configFileNode = vtkSmartPointer<vtkMRMLTextNode>::New();
-  configFileNode->SetName(name.c_str());
+
   configFileNode->SaveWithSceneOn();
   configFileNode->SetAttribute(CONFIG_FILE_NODE_ATTRIBUTE, "true");
   this->mrmlScene()->AddNode(configFileNode);
 
   vtkSmartPointer<vtkMRMLTextStorageNode> configFileStorageNode = vtkSmartPointer<vtkMRMLTextStorageNode>::New();
-  std::string storageNodeName = name + "_StorageNode";
-  configFileStorageNode->SetName(storageNodeName.c_str());
+
   this->mrmlScene()->AddNode(configFileStorageNode);
   configFileNode->SetAndObserveStorageNodeID(configFileStorageNode->GetID());
-
+  
   std::string stringFilename = filename.toStdString();
   configFileStorageNode->SetFileName(stringFilename.c_str());
   configFileStorageNode->ReadData(configFileNode, true);
+
+  const char* configFileText = configFileNode->GetText();
+  if (!configFileText)
+  {
+    this->mrmlScene()->RemoveNode(configFileNode);
+    this->mrmlScene()->RemoveNode(configFileStorageNode);
+    return;
+  }
+
+  std::string name = fileInfo.fileName().toStdString();
+  vtkSmartPointer<vtkXMLDataElement> configFileXML = vtkSmartPointer<vtkXMLDataElement>::New();
+  configFileXML = vtkXMLUtilities::ReadElementFromString(configFileText);
+  
+
+  vtkSmartPointer<vtkXMLDataElement> dataCollectionElement = configFileXML->FindNestedElementWithName("DataCollection");
+  if (dataCollectionElement)
+  {
+    vtkSmartPointer<vtkXMLDataElement> deviceSetElement = dataCollectionElement->FindNestedElementWithName("DeviceSet");
+    if (deviceSetElement)
+    {
+      const char* nameAttribute = deviceSetElement->GetAttribute("Name");
+      if (nameAttribute)
+      {
+        name = nameAttribute;
+      }
+    }
+
+  }
+
+  configFileNode->SetName(name.c_str());
+  std::string storageNodeName = name + "_StorageNode";
+  configFileStorageNode->SetName(storageNodeName.c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -574,13 +603,15 @@ void qMRMLPlusLauncherRemoteWidget::onLaunchServer()
   int logLevel = d->logLevelComboBox->currentData().toInt();
   const char* fileName = configFileNode->GetName();
   const char* configFile = configFileNode->GetText();
-
   // TODO: Update with proper command syntax when finalized
   std::stringstream commandText;
   commandText << "<Command>" << std::endl;
   commandText << "  <LogLevel Value= \""<< logLevel << "\"/>" << std::endl;
   commandText << "  <FileName Value= \"" << fileName << "\"/>" << std::endl;
-  commandText << configFile << std::endl;
+  if (configFile)
+  {
+    commandText << configFile << std::endl;
+  }
   commandText << "</Command>" << std::endl;
 
   vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> startServerCommand = vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New();

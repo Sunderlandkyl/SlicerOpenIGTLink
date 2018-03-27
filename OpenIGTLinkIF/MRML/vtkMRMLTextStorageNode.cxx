@@ -96,7 +96,12 @@ int vtkMRMLTextStorageNode::WriteDataInternal(vtkMRMLNode *refNode)
     vtkMRMLTextNode *textNode =
       vtkMRMLTextNode::SafeDownCast(refNode);
 
-    // TODO
+    std::string filename = this->GetFileName();
+    std::string text = textNode->GetText();
+
+    std::ofstream file(filename);
+    file << text;
+    file.close();
 
     return 1;
 }
