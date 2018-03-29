@@ -23,14 +23,14 @@
       <item>
        <widget class="QLabel" name="hostnameLabel">
         <property name="text">
-         <string>Hostname:</string>
+         <string>Hostname:Port:</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QLineEdit" name="hostnameLineEdit">
         <property name="text">
-         <string>localhost</string>
+         <string>localhost:18904</string>
         </property>
        </widget>
       </item>

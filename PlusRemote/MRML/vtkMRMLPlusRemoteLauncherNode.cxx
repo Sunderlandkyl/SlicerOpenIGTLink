@@ -43,16 +43,20 @@
 static const char* LAUNCHER_CONNECTOR_REFERENCE_ROLE = "launcherConnectorRef";
 static const char* CURRENT_CONFIG_REFERENCE_ROLE = "currentConfigRef";
 
+const int PORT_MIN = 0;
+const int PORT_MAX = 65535;
+
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLPlusRemoteLauncherNode);
 
 //----------------------------------------------------------------------------
 vtkMRMLPlusRemoteLauncherNode::vtkMRMLPlusRemoteLauncherNode()
-  : Hostname("localhost")
-  , ServerState(vtkMRMLPlusRemoteLauncherNode::ServerOff) //TODO
+  : ServerLauncherHostname(NULL)
   , ServerLauncherPort(vtkMRMLPlusRemoteLauncherNode::DefaultPort)
+  , ServerState(vtkMRMLPlusRemoteLauncherNode::ServerOff) //TODO
   , LogLevel(vtkMRMLPlusRemoteLauncherNode::LogLevelInfo)
 {
+  this->SetServerLauncherHostname("localhost");
 }
 
 //----------------------------------------------------------------------------
@@ -66,7 +70,7 @@ void vtkMRMLPlusRemoteLauncherNode::WriteXML(ostream& of, int nIndent)
   Superclass::WriteXML(of, nIndent);
 
   // Write all MRML node attributes into output stream
-  of << " hostname=\"" << this->Hostname << "\"";
+  of << " hostname=\"" << this->ServerLauncherHostname << "\"";
   of << " serverLauncherPort =\"" << this->ServerLauncherPort << "\"";
   of << " serverState =\"" << this->ServerState << "\"";
 
@@ -90,7 +94,7 @@ void vtkMRMLPlusRemoteLauncherNode::ReadXMLAttributes(const char** atts)
 
     if (!strcmp(attName, "hostname"))
       {
-      this->SetHostname(attValue);
+      this->SetServerLauncherHostname(attValue);
       }
     else if (!strcmp(attName, "serverLauncherPort"))
       {
@@ -161,4 +165,11 @@ vtkMRMLTextNode* vtkMRMLPlusRemoteLauncherNode::GetCurrentConfigNode()
 void vtkMRMLPlusRemoteLauncherNode::SetAndObserveCurrentConfigNode(vtkMRMLTextNode* node)
 {
   this->SetNodeReferenceID(CURRENT_CONFIG_REFERENCE_ROLE, (node ? node->GetID() : NULL));
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLPlusRemoteLauncherNode::SetServerLauncherPort(int port)
+{
+  int clampedPort = std::max(PORT_MIN, std::min(PORT_MAX, port));
+  this->ServerLauncherPort = clampedPort;
 }

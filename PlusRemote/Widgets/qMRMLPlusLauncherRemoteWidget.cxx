@@ -27,7 +27,6 @@
 #include <QtGui>
 #include <QDebug>
 #include <qfiledialog.h>
-#include <QIntValidator>
 
 // VTK includes
 #include <vtkNew.h>
@@ -149,6 +148,7 @@ void qMRMLPlusLauncherRemoteWidgetPrivate::init()
   QObject::connect(this->logLevelComboBox, SIGNAL(currentIndexChanged(int)), q, SLOT(onLogLevelChanged(int)));
   QObject::connect(this->startStopServerButton, SIGNAL(clicked()), q, SLOT(onStartStopButton()));
   QObject::connect(this->clearLogButton, SIGNAL(clicked()), q, SLOT(onClearLogButton()));
+  QObject::connect(this->hostnameLineEdit, SIGNAL(textEdited(const QString &)), q, SLOT(onHostChanged(const QString &)));
 
 }
 
@@ -320,11 +320,13 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
 
   bool configFileSelected = configFileNode != NULL;
 
-  const char* hostname = d->ParameterSetNode->GetHostname();
+  const char* hostname = d->ParameterSetNode->GetServerLauncherHostname();
   int port = d->ParameterSetNode->GetServerLauncherPort();
+  int cursorPosition = d->hostnameLineEdit->cursorPosition();
   std::stringstream hostnameAndPort;
   hostnameAndPort << hostname << ":" << port;
   d->hostnameLineEdit->setText(QString::fromStdString(hostnameAndPort.str()));
+  d->hostnameLineEdit->setCursorPosition(cursorPosition);
 
   ///
   int serverState = d->ParameterSetNode->GetServerState();
@@ -375,37 +377,8 @@ void qMRMLPlusLauncherRemoteWidget::onConnectCheckBoxChanged(bool connect)
 {
   Q_D(qMRMLPlusLauncherRemoteWidget);
 
-  std::string hostnameAndPort = d->hostnameLineEdit->text().toStdString();
-  std::vector<std::string> tokens = std::vector<std::string>();
-  std::istringstream ss(hostnameAndPort);
-  std::string item;
-  while (std::getline(ss, item, ':'))
-  {
-    if (!item.empty())
-    {
-      tokens.push_back(item);
-    }
-  }
-
-  const char* hostname = "localhost";
-  int port = 18904;
-  if (tokens.size() == 1)
-  {
-    hostname = tokens[0].c_str();
-  }
-  else if (tokens.size() > 1)
-  {
-    hostname = tokens[0].c_str();
-    bool success = false;
-    port = QVariant(tokens[1].c_str()).toInt(&success);
-    if (!success)
-    {
-      port = 18904;
-    }
-  }
-
-  d->ParameterSetNode->SetHostname(hostname);
-  d->ParameterSetNode->SetServerLauncherPort(port);
+  const char* hostname = d->ParameterSetNode->GetServerLauncherHostname();
+  int port = d->ParameterSetNode->GetServerLauncherPort();
 
   vtkMRMLIGTLConnectorNode* launcherConnectorNode = NULL;
   launcherConnectorNode = d->ParameterSetNode->GetLauncherConnectorNode();
@@ -603,6 +576,53 @@ void qMRMLPlusLauncherRemoteWidget::onLogLevelChanged(int index)
 }
 
 //-----------------------------------------------------------------------------
+void qMRMLPlusLauncherRemoteWidget::onHostChanged(const QString &text)
+{
+  Q_D(qMRMLPlusLauncherRemoteWidget);
+
+  std::string hostnameAndPort = text.toStdString();
+  std::vector<std::string> tokens = std::vector<std::string>();
+  std::istringstream ss(hostnameAndPort);
+  std::string item;
+  while (std::getline(ss, item, ':'))
+  {
+    tokens.push_back(item);
+  }
+
+  std::string hostname = d->ParameterSetNode->GetServerLauncherHostname();
+  if (tokens.size() >= 1)
+  {
+    hostname = tokens[0];
+  }
+
+  int port = d->ParameterSetNode->GetServerLauncherPort();
+  if (tokens.size() > 1)
+  {
+    bool success = false;
+    int parsedPort = QVariant(tokens[1].c_str()).toInt(&success);
+    if (success)
+    {
+      port = parsedPort;
+    }
+  }
+
+  d->ParameterSetNode->SetServerLauncherHostname(hostname.c_str());
+  d->ParameterSetNode->SetServerLauncherPort(port);
+
+  hostname = d->ParameterSetNode->GetServerLauncherHostname();
+  port = d->ParameterSetNode->GetServerLauncherPort();
+
+  // If the input string contained some invalid characters, update widget from parameter node to remove them
+  std::stringstream reformattedSS;
+  reformattedSS << hostname << ":" << port;
+  std::string reformattedString = reformattedSS.str();
+  if (strcmp(reformattedString.c_str(), hostnameAndPort.c_str()) != 0)
+  {
+    this->updateWidgetFromMRML();
+  }
+}
+
+//-----------------------------------------------------------------------------
 void qMRMLPlusLauncherRemoteWidget::onStartStopButton()
 {
   Q_D(qMRMLPlusLauncherRemoteWidget);
@@ -782,20 +802,38 @@ void qMRMLPlusLauncherRemoteWidget::onCommandReceived(vtkObject* caller, unsigne
     vtkSmartPointer<vtkXMLDataElement> plusConfigurationResponseElement = rootElement->FindNestedElementWithName("ServerStarted");
     if (plusConfigurationResponseElement)
     {
-      const char* ports = plusConfigurationResponseElement->GetAttribute("Ports");
+      const char* ports = plusConfigurationResponseElement->GetAttribute("Servers");
       if (ports)
       {
         //std::vector<std::string> tokens = std::vector<std::string>();
         std::istringstream ss(ports);
-        std::string token;
+        std::string nameAndPortTokentoken;
 
-        while (std::getline(ss, token, ';')) {
-          //tokens.push_back(token);
+
+        while (std::getline(ss, nameAndPortTokentoken, ';')) {
+
+          std::string token;
+          std::istringstream innerSS(nameAndPortTokentoken);
+          std::vector<std::string> tokens = std::vector<std::string>();
+          while (std::getline(innerSS, token, ':'))
+          {
+            tokens.push_back(token);
+          }
+
+          if (tokens.size() != 2)
+          {
+            continue;
+          }
+
+          std::string nameString = tokens[0];
+          std::string portString = tokens[1];
+
           bool success;
-          int port = QString::fromStdString(token).toInt(&success);
+          int port = QString::fromStdString(portString).toInt(&success);
           if (success)
           {
-            d->q_ptr->createConnectorNode("PlusServer", d->ParameterSetNode->GetHostname(), port);
+            std::string connectorName = d->ParameterSetNode->GetServerLauncherHostname() + std::string(" || ") + nameAndPortTokentoken;
+            d->q_ptr->createConnectorNode(connectorName.c_str(), d->ParameterSetNode->GetServerLauncherHostname(), port);
           }
         }
       }
@@ -952,7 +990,7 @@ void qMRMLPlusLauncherRemoteWidget::onServerInfoResponse(vtkObject* caller, unsi
 
         if (id && nestedElement->GetScalarAttribute("ListeningPort", port))
         {
-          const char* hostname = d->ParameterSetNode->GetHostname();
+          const char* hostname = d->ParameterSetNode->GetServerLauncherHostname();
           d->q_ptr->createConnectorNode(id, hostname, d->ParameterSetNode->GetServerLauncherPort());
         }
       }

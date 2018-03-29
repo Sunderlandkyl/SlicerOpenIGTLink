@@ -81,11 +81,11 @@ public:
   vtkGetMacro(ServerState, int);
   vtkSetMacro(ServerState, int);
 
-  vtkGetStringMacro(Hostname);
-  vtkSetStringMacro(Hostname);
+  vtkGetStringMacro(ServerLauncherHostname);
+  vtkSetStringMacro(ServerLauncherHostname);
 
+  void SetServerLauncherPort(int port);
   vtkGetMacro(ServerLauncherPort, int);
-  vtkSetMacro(ServerLauncherPort, int);
 
   vtkGetMacro(LogLevel, int);
   vtkSetMacro(LogLevel, int);
@@ -103,7 +103,7 @@ public:
 private:
   int ServerLauncherState;
   int ServerState;
-  char* Hostname;
+  char* ServerLauncherHostname;
   int ServerLauncherPort;
   int LogLevel;
 
