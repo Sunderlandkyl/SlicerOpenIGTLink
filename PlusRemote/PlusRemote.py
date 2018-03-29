@@ -603,17 +603,17 @@ class PlusRemoteWidget(ScriptedLoadableModuleWidget):
       self.logic.setDefaultParameters(self.parameterNode)
       self.parameterNodeObserver = self.parameterNode.AddObserver('currentNodeChanged(vtkMRMLNode*)', self.updateGuiFromParameterNode)
 
-      self.plusRemoteLauncherId = self.parameterNode.GetNodeReferenceID(self.plusLauncherRemoteReferenceID)
-      self.plusRemoteLauncherNode = None
-      if (self.plusRemoteLauncherId):
-        self.plusRemoteLauncherNode = slicer.mrmlScene.GetNodeByID(self.plusRemoteLauncherId)
+      self.plusRemoteLauncherReferenceID = "PlusRemoteLauncher"
+      plusRemoteSingletonSuffix = "_PlusRemoteLauncher"
+      plusRemoteLauncherSingletonTag = self.parameterNode.GetName() + plusRemoteSingletonSuffix
+      plusRemoteLauncherNode = slicer.mrmlScene.GetSingletonNode(plusRemoteLauncherSingletonTag, "vtkMRMLPlusRemoteLauncherNode")
 
-      if (self.plusRemoteLauncherNode is None):
-        self.plusRemoteLauncherNode = slicer.vtkMRMLPlusRemoteLauncherNode()
-        slicer.mrmlScene.AddNode(self.plusRemoteLauncherNode)
-        self.parameterNode.SetNodeReferenceID(self.plusLauncherRemoteReferenceID, self.plusRemoteLauncherNode.GetID())
-
-      self.plusLauncherRemoteWidget.setPlusRemoteLauncherNode(self.plusRemoteLauncherNode)
+      if (plusRemoteLauncherNode is None):
+        plusRemoteLauncherNode = slicer.vtkMRMLPlusRemoteLauncherNode()
+        plusRemoteLauncherNode.SetSingletonTag(plusRemoteLauncherSingletonTag)
+        plusRemoteLauncherNode = slicer.mrmlScene.AddNode(plusRemoteLauncherNode)
+        self.parameterNode.SetNodeReferenceID(self.plusRemoteLauncherReferenceID, plusRemoteLauncherNode.GetID())
+      self.plusLauncherRemoteWidget.setParameterSetNode(plusRemoteLauncherNode)
     self.updateGuiFromParameterNode()
 
   def updateGuiFromParameterNode(self):

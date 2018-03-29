@@ -51,6 +51,7 @@ vtkMRMLPlusRemoteLauncherNode::vtkMRMLPlusRemoteLauncherNode()
   : Hostname("localhost")
   , ServerState(vtkMRMLPlusRemoteLauncherNode::ServerOff) //TODO
   , ServerLauncherPort(vtkMRMLPlusRemoteLauncherNode::DefaultPort)
+  , LogLevel(vtkMRMLPlusRemoteLauncherNode::LogLevelInfo)
 {
 }
 
@@ -67,6 +68,7 @@ void vtkMRMLPlusRemoteLauncherNode::WriteXML(ostream& of, int nIndent)
   // Write all MRML node attributes into output stream
   of << " hostname=\"" << this->Hostname << "\"";
   of << " serverLauncherPort =\"" << this->ServerLauncherPort << "\"";
+  of << " serverState =\"" << this->ServerState << "\"";
 
 }
 
@@ -94,12 +96,25 @@ void vtkMRMLPlusRemoteLauncherNode::ReadXMLAttributes(const char** atts)
       {
       vtkVariant portVariant = attValue;
       portVariant.ToInt();
-      int portValue = portValue = portVariant.ToInt();
-      if (!portVariant.IsValid())
-      {
+      bool valid = true;
+      int portValue = portVariant.ToInt(&valid);
+      if (!valid)
+        {
         portValue = vtkMRMLPlusRemoteLauncherNode::DefaultPort;
-      }
+        }
       this->SetServerLauncherPort(portValue);
+      }
+    else if (!strcmp(attName, "serverState"))
+      {
+      vtkVariant stateVariant = attValue;
+      bool valid = true;
+      stateVariant.ToInt();
+      int stateValue = stateVariant.ToInt(&valid);
+      if (!valid)
+        {
+          stateValue = vtkMRMLPlusRemoteLauncherNode::ServerOff;
+        }
+      this->SetServerLauncherPort(stateValue);
       }
     }
 

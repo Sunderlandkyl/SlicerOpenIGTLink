@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>391</width>
-    <height>185</height>
+    <height>241</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -132,14 +132,10 @@
        <property name="text">
         <string>Launch server</string>
        </property>
-       <property name="icon">
-        <iconset resource="../qMRMLPlusLauncherRemoteWidget.qrc">
-         <normaloff>:/Icons/PlusLauncherRemoteConnect.png</normaloff>:/Icons/PlusLauncherRemoteConnect.png</iconset>
-       </property>
        <property name="iconSize">
         <size>
-         <width>15</width>
-         <height>15</height>
+         <width>20</width>
+         <height>20</height>
         </size>
        </property>
       </widget>

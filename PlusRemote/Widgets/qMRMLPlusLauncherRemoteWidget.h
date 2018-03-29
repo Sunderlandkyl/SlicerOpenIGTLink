@@ -62,6 +62,11 @@ public slots:
   /// Set the MRML scene associated with the widget
   virtual void setMRMLScene(vtkMRMLScene* newScene);
 
+  //virtual void initializeParameterSetNode();
+
+  ///
+  virtual void onMRMLSceneEndCloseEvent();
+
   /// Update widget state from the MRML scene
   virtual void updateWidgetFromMRML();
 
@@ -69,6 +74,7 @@ public slots:
   void onConnectCheckBoxChanged(bool checked);
   virtual void onLoadConfigFile();
   virtual void onConfigFileChanged(vtkMRMLNode* configFileNode);
+  virtual void onLogLevelChanged(int index);
   virtual void onStartStopButton();
   virtual void onClearLogButton();
 
@@ -89,7 +95,7 @@ public slots:
   void setAndObserveLauncherConnectorNode(vtkMRMLIGTLConnectorNode*);
   void onLauncherConnectorNodeModified();
 
-  void setPlusRemoteLauncherNode(vtkMRMLPlusRemoteLauncherNode*);
+  void setParameterSetNode(vtkMRMLPlusRemoteLauncherNode*);
 
 protected:
   QScopedPointer<qMRMLPlusLauncherRemoteWidgetPrivate> d_ptr;

@@ -55,10 +55,10 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Standard MRML node methods
-  virtual vtkMRMLNode* CreateNodeInstance();  
-  virtual void ReadXMLAttributes( const char** atts );
-  virtual void WriteXML( ostream& of, int indent );
-  virtual void Copy( vtkMRMLNode *node );
+  virtual vtkMRMLNode* CreateNodeInstance() VTK_OVERRIDE;
+  virtual void ReadXMLAttributes(const char** atts) VTK_OVERRIDE;
+  virtual void WriteXML(ostream& of, int indent) VTK_OVERRIDE;
+  virtual void Copy(vtkMRMLNode *node) VTK_OVERRIDE;
   virtual const char* GetNodeTagName() VTK_OVERRIDE { return "PlusRemoteLauncher"; }
 
 protected:
@@ -69,14 +69,26 @@ protected:
 
 public:
 
+  enum
+  {
+    LogLevelError = 1,
+    LogLevelWarning = 2,
+    LogLevelInfo = 3,
+    LogLevelDebug = 4,
+    LogLevelTrace = 5,
+  };
+
   vtkGetMacro(ServerState, int);
   vtkSetMacro(ServerState, int);
 
-  vtkGetMacro(Hostname, std::string);
-  vtkSetMacro(Hostname, std::string);
+  vtkGetStringMacro(Hostname);
+  vtkSetStringMacro(Hostname);
 
   vtkGetMacro(ServerLauncherPort, int);
   vtkSetMacro(ServerLauncherPort, int);
+
+  vtkGetMacro(LogLevel, int);
+  vtkSetMacro(LogLevel, int);
 
   /// Get launcher connector node
   vtkMRMLIGTLConnectorNode* GetLauncherConnectorNode();
@@ -91,8 +103,9 @@ public:
 private:
   int ServerLauncherState;
   int ServerState;
-  std::string Hostname;
+  char* Hostname;
   int ServerLauncherPort;
+  int LogLevel;
 
   static const int DefaultPort = 18904;
 };
