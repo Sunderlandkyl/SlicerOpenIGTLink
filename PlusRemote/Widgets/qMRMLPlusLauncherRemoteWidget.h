@@ -79,23 +79,10 @@ public slots:
   virtual void onStartStopButton();
   virtual void onClearLogButton();
 
-  virtual void onLaunchServer();
-  virtual void onStopServer();
-
-  virtual void getServerInfo();
-
-  static void onStartServerResponse(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);
-  static void onStopServerResponse(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);
-  static void onCommandReceived(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);
-  static void onServerInfoResponse(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);
-
-  void onLogMessageCommand(vtkXMLDataElement* messageCommandElement);
-  
-  vtkMRMLIGTLConnectorNode* createConnectorNode(const char* id, const char* hostname, int port);
-
+  virtual void launchServer();
+  virtual void stopServer();
+ 
   void setAndObserveLauncherConnectorNode(vtkMRMLIGTLConnectorNode*);
-  void onLauncherConnectorNodeModified();
-
   void setParameterSetNode(vtkMRMLPlusRemoteLauncherNode*);
 
 protected:

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>391</width>
-    <height>241</height>
+    <width>345</width>
+    <height>212</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,34 +15,34 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="ctkCollapsibleGroupBox" name="launcherConnectionGroupBox">
+    <widget class="ctkCollapsibleGroupBox" name="LauncherConnectionGroupBox">
      <property name="title">
       <string>Launcher connection info</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="HorizontalLayout">
       <item>
-       <widget class="QLabel" name="hostnameLabel">
+       <widget class="QLabel" name="HostnameLabel">
         <property name="text">
          <string>Hostname:Port:</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="hostnameLineEdit">
+       <widget class="QLineEdit" name="HostnameLineEdit">
         <property name="text">
          <string>localhost:18904</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="launcherConnectCheckBox">
+       <widget class="QCheckBox" name="LauncherConnectCheckBox">
         <property name="text">
          <string>Connect</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="launcherStatusButton">
+       <widget class="QToolButton" name="LauncherStatusButton">
         <property name="text">
          <string>...</string>
         </property>
@@ -77,16 +77,16 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="loadConfigLayout">
+    <layout class="QHBoxLayout" name="LoadConfigLayout">
      <item>
-      <widget class="QLabel" name="configFileLabel">
+      <widget class="QLabel" name="ConfigFileLabel">
        <property name="text">
         <string>Config file:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="qMRMLNodeComboBox" name="configFileSelectorComboBox">
+      <widget class="qMRMLNodeComboBox" name="ConfigFileSelectorComboBox">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -104,7 +104,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="loadConfigFileButton">
+      <widget class="QToolButton" name="LoadConfigFileButton">
        <property name="text">
         <string>...</string>
        </property>
@@ -113,9 +113,9 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="launchServerLayout">
+    <layout class="QHBoxLayout" name="LaunchServerLayout">
      <item>
-      <spacer name="horizontalSpacer">
+      <spacer name="HorizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -128,7 +128,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="startStopServerButton">
+      <widget class="QPushButton" name="StartStopServerButton">
        <property name="text">
         <string>Launch server</string>
        </property>
@@ -143,7 +143,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QGroupBox" name="logGroupBox">
+    <widget class="QGroupBox" name="LogGroupBox">
      <property name="visible">
       <bool>false</bool>
      </property>
@@ -152,23 +152,23 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
-       <widget class="QTextEdit" name="serverLogTextEdit">
+       <widget class="QTextEdit" name="ServerLogTextEdit">
         <property name="readOnly">
          <bool>true</bool>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="clearLogButton">
+       <widget class="QPushButton" name="ClearLogButton">
         <property name="text">
          <string>Clear</string>
         </property>
        </widget>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <layout class="QHBoxLayout" name="HorizontalLayout_3">
         <item>
-         <widget class="QLabel" name="logLevelLabel">
+         <widget class="QLabel" name="LogLevelLabel">
           <property name="text">
            <string>Log level:</string>
           </property>
@@ -178,7 +178,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="logLevelComboBox"/>
+         <widget class="QComboBox" name="LogLevelComboBox"/>
         </item>
        </layout>
       </item>
@@ -186,7 +186,7 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleGroupBox" name="configFileGroupBox">
+    <widget class="ctkCollapsibleGroupBox" name="ConfigFileGroupBox">
      <property name="title">
       <string>Config File</string>
      </property>
@@ -195,13 +195,13 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
-       <widget class="QTextEdit" name="configFileTextEdit"/>
+       <widget class="QTextEdit" name="ConfigFileTextEdit"/>
       </item>
      </layout>
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
+    <spacer name="VerticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
@@ -239,9 +239,9 @@
  </resources>
  <connections>
   <connection>
-   <sender>launcherStatusButton</sender>
+   <sender>LauncherStatusButton</sender>
    <signal>toggled(bool)</signal>
-   <receiver>logGroupBox</receiver>
+   <receiver>LogGroupBox</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
