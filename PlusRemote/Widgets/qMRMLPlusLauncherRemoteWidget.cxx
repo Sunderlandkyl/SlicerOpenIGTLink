@@ -535,12 +535,17 @@ void qMRMLPlusLauncherRemoteWidget::onMRMLSceneEndCloseEvent()
 void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
 {
   Q_D(qMRMLPlusLauncherRemoteWidget);
+
+  std::string tooltipSuffix = " Click to view log";
   if (!this->mrmlScene() || this->mrmlScene()->IsClosing() || !d->ParameterSetNode)
   {
     bool checkBoxSignals = d->LauncherConnectCheckBox->blockSignals(true);
     d->LauncherConnectCheckBox->setDisabled(true);
     d->LauncherConnectCheckBox->setChecked(false);
     d->LauncherConnectCheckBox->blockSignals(checkBoxSignals);
+    d->LauncherStatusButton->setIcon(d->IconDisconnected);
+    d->LauncherStatusButton->setToolTip(QString::fromStdString("Launcher disconnected. " + tooltipSuffix));
+    d->ConfigFileTextEdit->setText("");
     return;
   }
 
@@ -572,8 +577,6 @@ void qMRMLPlusLauncherRemoteWidget::updateWidgetFromMRML()
   {
     d->ConfigFileTextEdit->setText("");
   }
-
-  std::string tooltipSuffix = " Click to view log";
 
   bool connected = state == vtkMRMLIGTLConnectorNode::StateConnected;
   if (connectionEnabled)
