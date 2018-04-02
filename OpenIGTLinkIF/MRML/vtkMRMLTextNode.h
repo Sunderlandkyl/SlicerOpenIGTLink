@@ -5,7 +5,7 @@
 #include "vtkSlicerOpenIGTLinkIFModuleMRMLExport.h"
 
 // MRML includes
-#include <vtkMRMLNode.h>
+#include <vtkMRMLStorableNode.h>
 
 // VTK includes
 #include <vtkStdString.h>
@@ -13,7 +13,7 @@
 // STD includes
 #include <sstream>
 
-class  VTK_SLICER_OPENIGTLINKIF_MODULE_MRML_EXPORT vtkMRMLTextNode : public vtkMRMLNode
+class  VTK_SLICER_OPENIGTLINKIF_MODULE_MRML_EXPORT vtkMRMLTextNode : public vtkMRMLStorableNode
 {
 public:
   enum
@@ -25,7 +25,7 @@ public:
   };
 
   static vtkMRMLTextNode *New();
-  vtkTypeMacro(vtkMRMLTextNode,vtkMRMLNode);
+  vtkTypeMacro(vtkMRMLTextNode, vtkMRMLStorableNode);
   void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   virtual vtkMRMLNode* CreateNodeInstance() VTK_OVERRIDE;
@@ -63,6 +63,10 @@ public:
   {
     TextModifiedEvent  = 30001,
   };
+
+  ///
+  /// Create default storage node or NULL if does not have one
+  virtual vtkMRMLStorageNode* CreateDefaultStorageNode() VTK_OVERRIDE;
 
 protected:
   vtkMRMLTextNode();

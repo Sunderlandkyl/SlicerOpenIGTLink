@@ -2,6 +2,8 @@
 #include "vtkMRMLTextNode.h"
 #include "vtkXMLUtilities.h"
 
+#include "vtkMRMLTextStorageNode.h"
+
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLTextNode);
 
@@ -61,13 +63,16 @@ void vtkMRMLTextNode::WriteXML(ostream& of, int nIndent)
 
   vtkIndent indent(nIndent);
 
-  of << indent << " text=\"";
-  if (this->GetText()!=NULL)
+  if (!this->GetStorageNode())
   {
-    // Write to XML, encoding special characters, such as " ' \ < > &
-    vtkXMLUtilities::EncodeString(this->GetText(), VTK_ENCODING_NONE, of, VTK_ENCODING_NONE, 1 /* encode special characters */ );
+    of << indent << " text=\"";
+    if (this->GetText() != NULL)
+    {
+      // Write to XML, encoding special characters, such as " ' \ < > &
+      vtkXMLUtilities::EncodeString(this->GetText(), VTK_ENCODING_NONE, of, VTK_ENCODING_NONE, 1 /* encode special characters */);
+    }
+    of << "\"";
   }
-  of << "\"";
 
   of << indent << " encoding=\"" << this->GetEncoding() << "\"";
 }
@@ -94,3 +99,13 @@ void vtkMRMLTextNode::PrintSelf(ostream& os, vtkIndent indent)
   os << "Encoding: " << this->GetEncoding() << "\n";
 }
 
+//---------------------------------------------------------------------------
+vtkMRMLStorageNode* vtkMRMLTextNode::CreateDefaultStorageNode()
+{
+  int minimumStorageNodeSizeBytes = 256;
+  if (std::string(this->GetText()).size() < minimumStorageNodeSizeBytes)
+  {
+    return NULL;
+  }
+  return vtkMRMLTextStorageNode::New();
+}
