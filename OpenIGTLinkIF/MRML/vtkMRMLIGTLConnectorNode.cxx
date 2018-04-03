@@ -725,6 +725,12 @@ void vtkMRMLIGTLConnectorNode::vtkInternal::ReceiveCommandResponse(igtlio::Comma
       command->SetResponseText(responseString.c_str());
     }
 
+    command->ClearResponseMetaData();
+    for (igtl::MessageBase::MetaDataMap::const_iterator it = responseDevice->GetMetaData().begin(); it != responseDevice->GetMetaData().end(); ++it)
+    {
+      command->SetReponseMetaDataElement(it->first, it->second.first, it->second.second);
+    }
+
     // Invoke command responses both on the vtkSlicerOpenIGTLinkCommand and the connectorNode.
     command->InvokeEvent(vtkSlicerOpenIGTLinkCommand::CommandCompletedEvent);
     this->External->InvokeEvent(CommandResponseReceivedEvent, command.GetPointer());

@@ -27,6 +27,9 @@
 
 #include "vtkCommand.h"
 
+// IGTL includes
+#include <igtlMessageBase.h>
+
 class vtkXMLDataElement;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -111,7 +114,7 @@ public:
   vtkSetMacro(Blocking, bool);
   vtkBooleanMacro(Blocking, bool);
 
-  // Direction of the commmand.
+  // Direction of the command.
   vtkGetMacro(Direction, int);
   vtkSetMacro(Direction, int);
   void SetDirectionIn() { this->Direction = CommandIn; };
@@ -152,6 +155,17 @@ public:
   /// Returns true if command execution is completed but not successfully
   bool IsFailed();
 
+  void SetMetaDataElement(const std::string& key, IANA_ENCODING_TYPE encoding, const std::string& value);
+  void SetMetaDataElement(const std::string& key, const std::string& value);
+  bool GetMetaDataElement(const std::string& key, IANA_ENCODING_TYPE& outEncoding, std::string& outValue);
+  void ClearMetaData();
+
+  void SetReponseMetaDataElement(const std::string& key, IANA_ENCODING_TYPE encoding, const std::string& value);
+  void SetReponseMetaDataElement(const std::string& key, const std::string& value);
+  bool GetReponseMetaDataElement(const std::string& key, IANA_ENCODING_TYPE& outEncoding, std::string& outValue);
+  igtl::MessageBase::MetaDataMap GetResponseMetaData() const;
+  void ClearResponseMetaData();
+
 protected:
   vtkSlicerOpenIGTLinkCommand();
   virtual ~vtkSlicerOpenIGTLinkCommand();
@@ -190,6 +204,8 @@ private:
 
   int Direction;
 
+  igtl::MessageBase::MetaDataMap MetaData;
+  igtl::MessageBase::MetaDataMap ResponseMetaData;
 };
 
 #endif

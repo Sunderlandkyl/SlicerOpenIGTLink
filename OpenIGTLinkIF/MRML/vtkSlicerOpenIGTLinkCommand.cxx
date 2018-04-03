@@ -264,3 +264,73 @@ bool vtkSlicerOpenIGTLinkCommand::IsFailed()
     this->Status == CommandExpired ||
     this->Status == CommandCancelled;
 }
+
+//----------------------------------------------------------------------------
+void vtkSlicerOpenIGTLinkCommand::SetMetaDataElement(const std::string& key, IANA_ENCODING_TYPE encoding, const std::string& value)
+{
+  this->MetaData[key] = std::pair<IANA_ENCODING_TYPE, std::string>(encoding, value);
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerOpenIGTLinkCommand::SetMetaDataElement(const std::string& key, const std::string& value)
+{
+  this->MetaData[key] = std::pair<IANA_ENCODING_TYPE, std::string>(IANA_TYPE_US_ASCII, value);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSlicerOpenIGTLinkCommand::GetMetaDataElement(const std::string& key, IANA_ENCODING_TYPE& outEncoding, std::string& outValue)
+{
+  if (this->MetaData.find(key) == this->MetaData.end())
+  {
+    return false;
+  }
+
+  outEncoding = this->MetaData[key].first;
+  outValue = this->MetaData[key].second;
+
+  return true;
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerOpenIGTLinkCommand::ClearMetaData()
+{
+  this->MetaData.clear();
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerOpenIGTLinkCommand::SetReponseMetaDataElement(const std::string& key, IANA_ENCODING_TYPE encoding, const std::string& value)
+{
+  this->ResponseMetaData[key] = std::pair<IANA_ENCODING_TYPE, std::string>(encoding, value);
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerOpenIGTLinkCommand::SetReponseMetaDataElement(const std::string& key, const std::string& value)
+{
+  this->ResponseMetaData[key] = std::pair<IANA_ENCODING_TYPE, std::string>(IANA_TYPE_US_ASCII, value);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSlicerOpenIGTLinkCommand::GetReponseMetaDataElement(const std::string& key, IANA_ENCODING_TYPE& outEncoding, std::string& outValue)
+{
+  if (this->ResponseMetaData.find(key) == this->ResponseMetaData.end())
+  {
+    return false;
+  }
+
+  outEncoding = this->ResponseMetaData[key].first;
+  outValue = this->ResponseMetaData[key].second;
+
+  return true;
+}
+
+//----------------------------------------------------------------------------
+igtl::MessageBase::MetaDataMap vtkSlicerOpenIGTLinkCommand::GetResponseMetaData() const
+{
+  return this->ResponseMetaData;
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerOpenIGTLinkCommand::ClearResponseMetaData()
+{
+  this->ResponseMetaData.clear();
+}
