@@ -150,6 +150,13 @@ void qSlicerOpenIGTLinkRemoteCommandWidget::onSendCommandClicked()
 
   if (d->radioButton_versionCommand->isChecked())
   {
+    if (d->lineEdit_commandName->text().isEmpty())
+    {
+      d->ResponseTextEdit->setPlainText("Please specify a command name.");
+      return;
+    }
+
+    d->command->SetCommandName(d->lineEdit_commandName->text().toStdString());
     for (int i = 0; i < d->tableWidget_metaData->rowCount(); i++)
     {
       QTableWidgetItem *keyItem = d->tableWidget_metaData->item(i, 0);
@@ -165,7 +172,7 @@ void qSlicerOpenIGTLinkRemoteCommandWidget::onSendCommandClicked()
   }
 
   // Removed until command version support is re-added
-  //d->command->SetCommandVersion(d->radioButton_versionCommand->isChecked() ? IGTL_HEADER_VERSION_2 : IGTL_HEADER_VERSION_1);
+  d->command->SetCommandVersion(d->radioButton_versionCommand->isChecked() ? IGTL_HEADER_VERSION_2 : IGTL_HEADER_VERSION_1);
   
   // Logic sends command message.
   if (d->command->SetCommandText(d->CommandTextEdit->toPlainText().toStdString().c_str()))
@@ -196,12 +203,12 @@ void qSlicerOpenIGTLinkRemoteCommandWidget::onQueryResponseReceived()
   std::string parameters;
   int status = d->command->GetStatus();
 
-  QString responseGroupBoxTitle="Response details for command ID: "+QString(d->command->GetID())+"";
+  QString responseGroupBoxTitle="Response details for command ID: "+QString::fromStdString(d->command->GetID())+"";
   d->responseGroupBox->setTitle(responseGroupBoxTitle);
-  std::string displayedText = d->command->GetResponseMessage() ? d->command->GetResponseMessage() : "";
+  std::string displayedText = !d->command->GetResponseMessage().empty() ? d->command->GetResponseMessage() : "";
   if (d->command->GetResponseXML() == NULL)
   {
-    displayedText = d->command->GetResponseText() ? d->command->GetResponseText() : "";
+    displayedText = !d->command->GetResponseText().empty() ? d->command->GetResponseText() : "";
   }
   if (status == vtkSlicerOpenIGTLinkCommand::CommandSuccess)
   {
@@ -228,7 +235,7 @@ void qSlicerOpenIGTLinkRemoteCommandWidget::onQueryResponseReceived()
     d->tableWidget_metaData->setItem(0, d->tableWidget_metaData->rowCount() - 1, new QTableWidgetItem(QString::fromStdString(it->first)));
     d->tableWidget_metaData->setItem(1, d->tableWidget_metaData->rowCount() - 1, new QTableWidgetItem(QString::fromStdString(it->second.second)));
   }
-  std::string fullResponseText = d->command->GetResponseText() ? d->command->GetResponseText() : "";
+  std::string fullResponseText = !d->command->GetResponseText().empty() ? d->command->GetResponseText() : "";
   d->FullResponseTextEdit->setPlainText(QString(fullResponseText.c_str()));
 }
 
@@ -272,6 +279,7 @@ void qSlicerOpenIGTLinkRemoteCommandWidget::onVersionButtonClicked()
   d->tableWidget_metaData->setEnabled(d->radioButton_versionCommand->isChecked());
   d->pushButton_addMetaData->setEnabled(d->radioButton_versionCommand->isChecked());
   d->pushButton_removeMetaData->setEnabled(d->radioButton_versionCommand->isChecked());
+  d->lineEdit_commandName->setEnabled(d->radioButton_versionCommand->isChecked());
 }
 
 //------------------------------------------------------------------------------

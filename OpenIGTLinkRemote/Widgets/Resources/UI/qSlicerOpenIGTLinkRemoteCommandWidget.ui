@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>qSlicerOpenIGTLinkRemoteCommandWidget</class>
  <widget class="qSlicerWidget" name="qSlicerOpenIGTLinkRemoteCommandWidget">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>340</width>
-    <height>765</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -51,8 +43,8 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
-          <widget class="qMRMLNodeComboBox" name="ConnectorComboBox" native="true">
-           <property name="nodeTypes" stdset="0">
+          <widget class="qMRMLNodeComboBox" name="ConnectorComboBox">
+           <property name="nodeTypes">
             <stringlist>
              <string>vtkMRMLIGTLConnectorNode</string>
             </stringlist>
@@ -115,6 +107,34 @@
                <string notr="true">buttonGroup_version</string>
               </attribute>
              </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="widget_commandNameContainer" native="true">
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_commandName">
+              <property name="text">
+               <string>Command name:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_commandName"/>
             </item>
            </layout>
           </widget>

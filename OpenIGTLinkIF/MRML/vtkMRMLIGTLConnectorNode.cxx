@@ -1669,7 +1669,7 @@ void vtkMRMLIGTLConnectorNode::CancelCommand(vtkSlicerOpenIGTLinkCommand* comman
     return;
     }
 
-  const char* deviceID = command->GetDeviceID();
+  std::string deviceID = command->GetDeviceID();
   int queryID = command->GetQueryID();
 
   igtlio::DeviceKeyType key;
@@ -1886,10 +1886,10 @@ void vtkMRMLIGTLConnectorNode::SendCommandResponse(vtkSlicerOpenIGTLinkCommand* 
     vtkErrorMacro("vtkMRMLIGTLConnectorNode::SendCommandResponse failed: Invalid command");
     }
 
-  const char* deviceID = command->GetDeviceID();
-  const char* commandName = command->GetCommandName();
-  const char* responseText = command->GetResponseText();
-  this->Internal->SendCommandResponse(deviceID ? deviceID : "", commandName ? commandName : "", responseText ? responseText : "");
+  std::string deviceID = command->GetDeviceID();
+  std::string commandName = command->GetCommandName();
+  std::string responseText = command->GetResponseText();
+  this->Internal->SendCommandResponse(deviceID.empty() ? deviceID : "", commandName.empty() ? commandName : "", responseText.empty() ? responseText : "");
 }
 
 
@@ -1899,12 +1899,10 @@ void vtkMRMLIGTLConnectorNode::SendCommandResponse(std::string device_id, std::s
   this->Internal->PendingCommandMutex->Lock();
   for (std::deque<vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> >::iterator commandIt = this->Internal->PendingCommands.begin(); commandIt != this->Internal->PendingCommands.end(); ++commandIt)
     {
-    if (strcmp((*commandIt)->GetDeviceID(),device_id.c_str()) == 0 &&
-        strcmp((*commandIt)->GetDeviceID(), commandName.c_str()) == 0)
+    if ((*commandIt)->GetDeviceID() == device_id && (*commandIt)->GetCommandName() == commandName)
       {
       vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> command = (*commandIt);
-      const char* responseText = content.c_str();
-      command->SetResponseText(responseText);
+      command->SetResponseText(content);
       }
     }
   this->Internal->PendingCommandMutex->Unlock();
