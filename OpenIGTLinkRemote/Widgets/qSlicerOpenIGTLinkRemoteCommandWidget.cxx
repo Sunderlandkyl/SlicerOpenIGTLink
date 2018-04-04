@@ -164,7 +164,8 @@ void qSlicerOpenIGTLinkRemoteCommandWidget::onSendCommandClicked()
     }
   }
 
-  d->command->SetCommandVersion(d->radioButton_versionCommand->isChecked() ? IGTL_HEADER_VERSION_2 : IGTL_HEADER_VERSION_1);
+  // Removed until command version support is re-added
+  //d->command->SetCommandVersion(d->radioButton_versionCommand->isChecked() ? IGTL_HEADER_VERSION_2 : IGTL_HEADER_VERSION_1);
   
   // Logic sends command message.
   if (d->command->SetCommandText(d->CommandTextEdit->toPlainText().toStdString().c_str()))
