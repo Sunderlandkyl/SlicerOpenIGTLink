@@ -276,10 +276,10 @@ void qMRMLPlusLauncherRemoteWidgetPrivate::onCommandReceived(vtkObject* caller, 
     return;
   }
 
-  const char* name = command->GetCommandName();
-  vtkSmartPointer<vtkXMLDataElement> rootElement = vtkXMLUtilities::ReadElementFromString(command->GetCommandText());
+  std::string name = command->GetCommandName();
+  vtkSmartPointer<vtkXMLDataElement> rootElement = vtkXMLUtilities::ReadElementFromString(command->GetCommandText().c_str());
 
-  if (strcmp(name, "ServerStarted") == 0)
+  if (name == "ServerStarted")
   {
     d->CurrentErrorLevel = vtkMRMLPlusRemoteLauncherNode::LogLevelInfo;
     d->ParameterSetNode->SetServerState(vtkMRMLPlusRemoteLauncherNode::ServerRunning);
@@ -323,12 +323,12 @@ void qMRMLPlusLauncherRemoteWidgetPrivate::onCommandReceived(vtkObject* caller, 
       }
     }
   }
-  else if (strcmp(name, "ServerStopped") == 0)
+  else if (name == "ServerStopped")
   {
     d->CurrentErrorLevel = vtkMRMLPlusRemoteLauncherNode::LogLevelInfo;
     d->ParameterSetNode->SetServerState(vtkMRMLPlusRemoteLauncherNode::ServerOff);
   }
-  else if (strcmp(name, "LogMessage") == 0)
+  else if (name == "LogMessage")
   {
     d->onLogMessageCommand(rootElement);
   }
