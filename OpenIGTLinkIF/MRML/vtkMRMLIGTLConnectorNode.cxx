@@ -71,7 +71,7 @@ public:
   /// - If using BLOCKING, the call blocks until a response appears or timeout. Return response.
   /// - If using ASYNCHRONOUS, wait for the CommandResponseReceivedEvent event. Return device.
   ///
-  igtlio::CommandDevicePointer SendCommand(std::string device_id, std::string command, std::string content, igtlio::SYNCHRONIZATION_TYPE synchronized = igtlio::BLOCKING, double timeout_s = 5);
+  igtlio::CommandDevicePointer SendCommand(std::string device_id, std::string command, std::string content, igtlio::SYNCHRONIZATION_TYPE synchronized = igtlio::BLOCKING, double timeout_s = 5, igtl::MessageBase::MetaDataMap* metaData = NULL);
 
   /// Send a command response from the given device. Asynchronous.
   /// Precondition: The given device has received a query that is not yet responded to.
@@ -584,9 +584,9 @@ vtkMRMLNode* vtkMRMLIGTLConnectorNode::vtkInternal::GetOrAddMRMLNodeforDevice(ig
 }
 
 //----------------------------------------------------------------------------
-igtlio::CommandDevicePointer vtkMRMLIGTLConnectorNode::vtkInternal::SendCommand(std::string device_id, std::string command, std::string content, igtlio::SYNCHRONIZATION_TYPE synchronized, double timeout_s)
+igtlio::CommandDevicePointer vtkMRMLIGTLConnectorNode::vtkInternal::SendCommand(std::string device_id, std::string command, std::string content, igtlio::SYNCHRONIZATION_TYPE synchronized, double timeout_s, igtl::MessageBase::MetaDataMap* metaData)
 {
-  igtlio::CommandDevicePointer device = this->IOConnector->SendCommand(device_id, command, content, timeout_s);
+  igtlio::CommandDevicePointer device = this->IOConnector->SendCommand(device_id, command, content, timeout_s, metaData);
 
   if (synchronized == igtlio::BLOCKING)
   {
@@ -711,11 +711,18 @@ void vtkMRMLIGTLConnectorNode::vtkInternal::ReceiveCommandResponse(igtlio::Comma
       command = vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New();
       command->SetQueryID(queryID);
       command->SetCommandName(commandName.c_str());
-      command->SetCommandName(commandText.c_str());
+      command->SetCommandText(commandText.c_str());
       }
 
     vtkSlicerOpenIGTLinkCommand::CommandStatus commandStatus = this->ConvertIGTLIOQueryStatusToIGTLIFCommandStatus(queryStatus);
     command->SetStatus(commandStatus);
+
+    if (commandStatus == vtkSlicerOpenIGTLinkCommand::CommandExpired)
+    {
+      command->InvokeEvent(vtkSlicerOpenIGTLinkCommand::CommandCompletedEvent);
+      this->External->InvokeEvent(CommandExpiredEvent, command.GetPointer());
+      return;
+    }
 
     igtlio::CommandDevice* responseDevice = igtlio::CommandDevice::SafeDownCast(query.Response.GetPointer());
     if (responseDevice)
@@ -889,7 +896,7 @@ void vtkMRMLIGTLConnectorNode::ProcessIOConnectorEvents(vtkObject *caller, unsig
     case igtlio::Connector::RemovedDeviceEvent: mrmlEvent = DeviceModifiedEvent; break;
     case igtlio::Device::CommandReceivedEvent: mrmlEvent = CommandReceivedEvent; break;  // COMMAND device got a query, COMMAND received
     case igtlio::Device::CommandResponseReceivedEvent: mrmlEvent = CommandResponseReceivedEvent; break;  // COMMAND device got a response, RTS_COMMAND received
-    case igtlio::Device::ResponseEvent: mrmlEvent = CommandResponseReceivedEvent; break;  // COMMAND device got a response, RTS_COMMAND received
+    case igtlio::Device::CommandExpiredEvent: mrmlEvent = CommandExpiredEvent; break;  // COMMAND device did not receive a response before timeout
     }
   if( modifiedDevice != NULL)
     {
@@ -907,7 +914,7 @@ void vtkMRMLIGTLConnectorNode::ProcessIOConnectorEvents(vtkObject *caller, unsig
           {
           modifiedDevice->AddObserver(modifiedDevice->CommandReceivedEvent,  this, &vtkMRMLIGTLConnectorNode::ProcessIOConnectorEvents);
           modifiedDevice->AddObserver(modifiedDevice->CommandResponseReceivedEvent,  this, &vtkMRMLIGTLConnectorNode::ProcessIOConnectorEvents);
-          modifiedDevice->AddObserver(modifiedDevice->ResponseEvent, this, &vtkMRMLIGTLConnectorNode::ProcessIOConnectorEvents);
+          modifiedDevice->AddObserver(modifiedDevice->CommandExpiredEvent, this, &vtkMRMLIGTLConnectorNode::ProcessIOConnectorEvents);
           }
         }
       }
@@ -950,9 +957,9 @@ void vtkMRMLIGTLConnectorNode::ProcessIOConnectorEvents(vtkObject *caller, unsig
       this->Internal->ReceiveCommandResponse(commandDevice);
       return;
       }
-    else if (event == modifiedDevice->ResponseEvent)
+    else if (event == modifiedDevice->CommandExpiredEvent)
       {
-      // ResponseEvent is currently invoked for commands that are expired
+      // Invoke command response events on all pending commands that have expired
       igtlio::CommandDevice* commandDevice = igtlio::CommandDevice::SafeDownCast(modifiedDevice);
       this->Internal->ReceiveCommandResponse(commandDevice);
       return;
@@ -1829,29 +1836,33 @@ void vtkMRMLIGTLConnectorNode::SendCommand(vtkSlicerOpenIGTLinkCommand* command)
   double commandTimeoutSec = command->GetCommandTimeoutSec();
 
   igtlio::SYNCHRONIZATION_TYPE synchronizationType = blocking ? igtlio::BLOCKING : igtlio::ASYNCHRONOUS;
-  igtlio::CommandDevicePointer commandDevice = this->Internal->SendCommand(deviceID, commandName, commandContent, synchronizationType, commandTimeoutSec);
+
+  igtl::MessageBase::MetaDataMap metaData = command->GetMetaData();
+  igtlio::CommandDevicePointer commandDevice = this->Internal->SendCommand(deviceID, commandName, commandContent, synchronizationType, commandTimeoutSec, &metaData);
 
   if (!commandDevice)
     {
+    command->SetStatus(vtkSlicerOpenIGTLinkCommand::CommandFail);
+    command->InvokeEvent(vtkSlicerOpenIGTLinkCommand::CommandCompletedEvent);
     return;
     }
   command->SetQueryID(commandDevice->GetContent().id);
 
   if (blocking)
     {
-    std::vector<igtlio::CommandDevice::QueryType> queries = commandDevice->GetQueries();
-    for (std::vector<igtlio::CommandDevice::QueryType>::iterator queryIt = queries.begin(); queryIt != queries.end(); ++queryIt)
-      {
-      igtlio::CommandDevicePointer response = igtlio::CommandDevice::SafeDownCast((*queryIt).Response);
-      if (command->GetQueryID() != response->GetContent().id)
-        {
-        continue;
-        }
-      igtlio::CommandDevice::QUERY_STATUS queryStatus = (*queryIt).status;
-      vtkSlicerOpenIGTLinkCommand::CommandStatus commandStatus = this->Internal->ConvertIGTLIOQueryStatusToIGTLIFCommandStatus(queryStatus);
-      command->SetStatus(commandStatus);
-      }
-    command->SetResponseText(commandDevice->GetContent().content.c_str());
+
+    igtlio::CommandDevicePointer responseDevice = commandDevice;
+    const char* responseText = responseDevice->GetContent().content.c_str();
+    if (responseText)
+    {
+      command->SetResponseText(responseText);
+    }
+    command->ClearResponseMetaData();
+    for (igtl::MessageBase::MetaDataMap::const_iterator it = responseDevice->GetMetaData().begin(); it != responseDevice->GetMetaData().end(); ++it)
+    {
+      command->SetReponseMetaDataElement(it->first, it->second.first, it->second.second);
+    }
+    command->SetStatus(vtkSlicerOpenIGTLinkCommand::CommandSuccess);
     command->InvokeEvent(vtkSlicerOpenIGTLinkCommand::CommandCompletedEvent);
     }
   else

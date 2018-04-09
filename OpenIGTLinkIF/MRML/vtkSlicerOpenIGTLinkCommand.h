@@ -161,6 +161,7 @@ public:
   void SetMetaDataElement(const std::string& key, IANA_ENCODING_TYPE encoding, const std::string& value);
   void SetMetaDataElement(const std::string& key, const std::string& value);
   bool GetMetaDataElement(const std::string& key, IANA_ENCODING_TYPE& outEncoding, std::string& outValue);
+  igtl::MessageBase::MetaDataMap GetMetaData();
   void ClearMetaData();
 
   void SetReponseMetaDataElement(const std::string& key, IANA_ENCODING_TYPE encoding, const std::string& value);

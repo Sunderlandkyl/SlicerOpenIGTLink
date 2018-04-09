@@ -197,21 +197,7 @@ void vtkSlicerOpenIGTLinkCommand::SetResponseText(const std::string& text)
     this->ResponseXML=NULL;
     }
 
-  if (text.empty())
-  {
-    this->SetStatus(CommandFail);
-    return;
-  }
-
   this->ResponseXML = vtkXMLUtilities::ReadElementFromString(text.c_str());
-  if (this->ResponseXML == NULL)
-  {
-    // The response is not XML
-    vtkWarningMacro("OpenIGTLink command response is not XML: "<<text);
-    this->SetStatus(CommandFail);
-    return;
-  }
-
 }
 
 //----------------------------------------------------------------------------
@@ -331,4 +317,10 @@ igtl::MessageBase::MetaDataMap vtkSlicerOpenIGTLinkCommand::GetResponseMetaData(
 void vtkSlicerOpenIGTLinkCommand::ClearResponseMetaData()
 {
   this->ResponseMetaData.clear();
+}
+
+//----------------------------------------------------------------------------
+igtl::MessageBase::MetaDataMap vtkSlicerOpenIGTLinkCommand::GetMetaData()
+{
+  return this->MetaData;
 }
