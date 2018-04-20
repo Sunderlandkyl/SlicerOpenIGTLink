@@ -3,10 +3,11 @@
 //OpenIGTLink includes
 #include "igtlOSUtil.h"
 
+// OpenIGTLinkIO includes
+#include "igtlioCommand.h"
+
 // IF module includes
 #include "vtkMRMLIGTLConnectorNode.h"
-
-#include "vtkSlicerOpenIGTLinkCommand.h"
 
 // VTK includes
 #include <vtkTimerLog.h>
@@ -35,20 +36,20 @@ public:
   
   void onCommandReceivedEventFunc(vtkObject* caller, unsigned long eid, void *calldata)
   {
-  vtkSlicerOpenIGTLinkCommand* command = reinterpret_cast<vtkSlicerOpenIGTLinkCommand*>(calldata);
-  command->SetResponseText(ResponseString.c_str());
+  igtlioCommandPointer command = igtlioCommand::SafeDownCast(reinterpret_cast<vtkObject*>(calldata));
+  command->SetResponseContent(ResponseString);
   ConnectorNode->SendCommandResponse(command);
   std::cout << "*** COMMAND received from client:" << std::endl;
-  std::cout << command->GetCommandText() << std::endl;
+  std::cout << command->GetCommandContent() << std::endl;
   testSuccessful +=1;
   }
   
   void onCommandResponseReceivedEventFunc(vtkObject* caller, unsigned long eid,  void *calldata)
   {
   std::cout << "*** COMMAND response received from server:" << std::endl;
-  vtkSlicerOpenIGTLinkCommand* command = reinterpret_cast<vtkSlicerOpenIGTLinkCommand*>(calldata);
-  std::cout << command->GetResponseText() << std::endl;
-  if (ResponseString.compare(command->GetResponseText()) == 0)
+  igtlioCommandPointer command = igtlioCommand::SafeDownCast(reinterpret_cast<vtkObject*>(calldata));
+  std::cout << command->GetResponseContent() << std::endl;
+  if (ResponseString.compare(command->GetResponseContent()) == 0)
     {
     testSuccessful +=1;
     }
@@ -115,7 +116,8 @@ int vtkMRMLConnectorCommandSendAndReceiveTest(int argc, char * argv [] )
   
   std::string device_name = "TestDevice";
 
-  clientConnectorNode->SendCommand(device_name,"Get", "<Command>\n <Parameter Name=\"Depth\" />\n </Command>", false);
+  //clientConnectorNode->SendCommand(device_name,"Get", "<Command>\n <Parameter Name=\"Depth\" />\n </Command>", false);
+  clientConnectorNode->SendCommand(0, "Get", "<Command>\n <Parameter Name=\"Depth\" />\n </Command>", false);
   
   // Make sure the Server receive the command message.
   starttime = vtkTimerLog::GetUniversalTime();

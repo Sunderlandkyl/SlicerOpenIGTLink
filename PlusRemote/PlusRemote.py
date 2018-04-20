@@ -1360,83 +1360,76 @@ class PlusRemoteLogic(ScriptedLoadableModuleLogic):
     self.blockingCommands = False
     self.defaultDevice = "CommandProcessor"
 
+    import igtlioLogicPython as igtlioLogic
+
     # Create commands
-    self.cmdGetCaptureDeviceIds = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdGetCaptureDeviceIds.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdGetCaptureDeviceIds.SetCommandName('RequestDeviceIds')
-    self.cmdGetCaptureDeviceIds.SetCommandAttribute('DeviceType','VirtualCapture')
-    self.cmdGetCaptureDeviceIds.SetBlocking(self.blockingCommands)
-    self.cmdGetCaptureDeviceIds.SetDeviceID(self.defaultDevice)
+    self.cmdGetCaptureDeviceIds = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdGetCaptureDeviceIds.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdGetCaptureDeviceIds.SetName('RequestDeviceIds')
+    self.cmdGetCaptureDeviceIds.SetCommandContent('<Command Name= '+ self.cmdGetCaptureDeviceIds.GetName() + 'DeviceType=VirtualCapture/>')
+    #self.cmdGetCaptureDeviceIds.SetBlocking(self.blockingCommands)
 
-    self.cmdGetReconstructorDeviceIds = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdGetReconstructorDeviceIds.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdGetReconstructorDeviceIds.SetCommandName('RequestDeviceIds')
-    self.cmdGetReconstructorDeviceIds.SetCommandAttribute('DeviceType','VirtualVolumeReconstructor')
-    self.cmdGetReconstructorDeviceIds.SetBlocking(self.blockingCommands)
-    self.cmdGetReconstructorDeviceIds.SetDeviceID(self.defaultDevice)
+    self.cmdGetReconstructorDeviceIds = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdGetReconstructorDeviceIds.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdGetReconstructorDeviceIds.SetName('RequestDeviceIds')
+    self.cmdGetReconstructorDeviceIds.SetCommandContent('<Command Name= '+ self.cmdGetReconstructorDeviceIds.GetName() + 'DeviceType=VirtualVolumeReconstructor/>')
+    #self.cmdGetReconstructorDeviceIds.SetBlocking(self.blockingCommands)
 
-    self.cmdStartVolumeReconstruction = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdStartVolumeReconstruction.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdStartVolumeReconstruction.SetCommandName('StartVolumeReconstruction')
-    self.cmdStartVolumeReconstruction.SetBlocking(self.blockingCommands)
-    self.cmdStartVolumeReconstruction.SetDeviceID(self.defaultDevice)
+    self.cmdStartVolumeReconstruction = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdStartVolumeReconstruction.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdStartVolumeReconstruction.SetName('StartVolumeReconstruction')
+    #self.cmdStartVolumeReconstruction.SetBlocking(self.blockingCommands)
 
-    self.cmdStopVolumeReconstruction = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdStopVolumeReconstruction.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdStopVolumeReconstruction.SetCommandName('StopVolumeReconstruction')
-    self.cmdStopVolumeReconstruction.SetBlocking(self.blockingCommands)
-    self.cmdStopVolumeReconstruction.SetDeviceID(self.defaultDevice)
+    self.cmdStopVolumeReconstruction = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdStopVolumeReconstruction.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdStopVolumeReconstruction.SetName('StopVolumeReconstruction')
+    #self.cmdStopVolumeReconstruction.SetBlocking(self.blockingCommands)
 
-    self.cmdReconstructRecorded = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdReconstructRecorded.SetCommandTimeoutSec(2*self.defaultCommandTimeoutSec)
-    self.cmdReconstructRecorded.SetCommandName('ReconstructVolume')
-    self.cmdReconstructRecorded.SetBlocking(self.blockingCommands)
-    self.cmdReconstructRecorded.SetDeviceID(self.defaultDevice)
+    self.cmdReconstructRecorded = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdReconstructRecorded.SetTimeoutSec(2*self.defaultCommandTimeoutSec)
+    self.cmdReconstructRecorded.SetName('ReconstructVolume')
+    #self.cmdReconstructRecorded.SetBlocking(self.blockingCommands)
 
-    self.cmdStartRecording = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdStartRecording.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdStartRecording.SetCommandName('StartRecording')
-    self.cmdStartRecording.SetBlocking(self.blockingCommands)
-    self.cmdStartRecording.SetDeviceID(self.defaultDevice)
+    self.cmdStartRecording = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdStartRecording.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdStartRecording.SetName('StartRecording')
+    #self.cmdStartRecording.SetBlocking(self.blockingCommands)
 
-    self.cmdStopRecording = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdStopRecording.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdStopRecording.SetCommandName('StopRecording')
-    self.cmdStopRecording.SetBlocking(self.blockingCommands)
-    self.cmdStopRecording.SetDeviceID(self.defaultDevice)
+    self.cmdStopRecording = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdStopRecording.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdStopRecording.SetName('StopRecording')
+    #self.cmdStopRecording.SetBlocking(self.blockingCommands)
 
-    self.cmdGetVolumeReconstructionSnapshot = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdGetVolumeReconstructionSnapshot.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdGetVolumeReconstructionSnapshot.SetCommandName('GetVolumeReconstructionSnapshot')
-    self.cmdGetVolumeReconstructionSnapshot.SetBlocking(self.blockingCommands)
-    self.cmdGetVolumeReconstructionSnapshot.SetDeviceID(self.defaultDevice)
+    self.cmdGetVolumeReconstructionSnapshot = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdGetVolumeReconstructionSnapshot.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdGetVolumeReconstructionSnapshot.SetName('GetVolumeReconstructionSnapshot')
+    #self.cmdGetVolumeReconstructionSnapshot.SetBlocking(self.blockingCommands)
 
-    self.cmdUpdateTransform = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdUpdateTransform.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdUpdateTransform.SetCommandName('UpdateTransform')
-    self.cmdUpdateTransform.SetBlocking(self.blockingCommands)
-    self.cmdUpdateTransform.SetDeviceID(self.defaultDevice)
+    self.cmdUpdateTransform = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdUpdateTransform.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdUpdateTransform.SetName('UpdateTransform')
+    #self.cmdUpdateTransform.SetBlocking(self.blockingCommands)
 
-    self.cmdSaveConfig = slicer.vtkSlicerOpenIGTLinkCommand()
-    self.cmdSaveConfig.SetCommandTimeoutSec(self.defaultCommandTimeoutSec)
-    self.cmdSaveConfig.SetCommandName('SaveConfig')
-    self.cmdSaveConfig.SetBlocking(self.blockingCommands)
-    self.cmdSaveConfig.SetDeviceID(self.defaultDevice)
+    self.cmdSaveConfig = igtlioLogic.vtkIGTLIOCommand()
+    self.cmdSaveConfig.SetTimeoutSec(self.defaultCommandTimeoutSec)
+    self.cmdSaveConfig.SetName('SaveConfig')
+    #self.cmdSaveConfig.SetBlocking(self.blockingCommands)
 
     pass
 
   def __del__(self):
     # Clean up commands
-    self.cmdGetCaptureDeviceIds.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdGetReconstructorDeviceIds.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdStartVolumeReconstruction.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdStopVolumeReconstruction.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdReconstructRecorded.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdStartRecording.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdStopRecording.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdGetVolumeReconstructionSnapshot.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdUpdateTransform.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    self.cmdSaveConfig.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
+    import igtlioLogicPython as igtlioLogic
+    self.cmdGetCaptureDeviceIds.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdGetReconstructorDeviceIds.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdStartVolumeReconstruction.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdStopVolumeReconstruction.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdReconstructRecorded.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdStartRecording.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdStopRecording.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdGetVolumeReconstructionSnapshot.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdUpdateTransform.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
+    self.cmdSaveConfig.RemoveObservers(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent)
 
   def setDefaultParameters(self, parameterNode):
     parameterList = {'RoiDisplay': False, 'RecordingFilename': "Recording.mha", 'RecordingFilenameCompletion': False, 'OfflineReconstructionSpacing': 3.0, 'OfflineVolumeToReconstruct': 0, 'OfflineOutputVolumeDevice': "RecVol_Reference" , 'OfflineDefaultLayout': True, 'ScoutScanSpacing': 3.0, 'ScoutScanFilename': "ScoutScanRecording.mha", 'ScoutFilenameCompletion': False, 'ScoutDefaultLayout': True, 'LiveReconstructionSpacing': 1.0, 'LiveRecOutputVolumeDevice': "liveReconstruction", 'RoiExtent1': 0.0, 'RoiExtent2': 0.0, 'RoiExtent3': 0.0, 'SnapshotsNumber': 3, 'LiveFilenameCompletion': False, 'LiveDefaultLayout': True}
@@ -1455,10 +1448,12 @@ class PlusRemoteLogic(ScriptedLoadableModuleLogic):
     return re.sub('(\.nrrd$)|(\.mh[ad]$)|$','{0}\g<0>'.format(timestamp),filename, 1, re.IGNORECASE)
 
   def executeCommand(self, command, connectorNodeId, responseCallbackMethod):
-    command.SetCommandAttribute('Name', command.GetCommandName())
-    command.RemoveObservers(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent)
-    command.AddObserver(slicer.vtkSlicerOpenIGTLinkCommand.CommandCompletedEvent, responseCallbackMethod)
-    self.connectorNode.SendCommand(command)
+    import igtlioLogicPython as igtlioLogic
+    command.RemoveObservers(igtlioLogic.vtkIGTLIOCommand.CommandCompletedEvent)
+    command.AddObserver(igtlioLogic.vtkIGTLIOCommand().CommandCompletedEvent, responseCallbackMethod)
+    command.SetResponseContent("")
+    #command.SetResponseMetaData(None)
+    self.connectorNode.SendCommandToAllClients(command)
 
   def getCaptureDeviceIds(self, connectorNodeId, responseCallbackMethod):
     self.executeCommand(self.cmdGetCaptureDeviceIds, connectorNodeId, responseCallbackMethod)
@@ -1467,43 +1462,61 @@ class PlusRemoteLogic(ScriptedLoadableModuleLogic):
     self.executeCommand(self.cmdGetReconstructorDeviceIds, connectorNodeId, responseCallbackMethod)
 
   def startVolumeReconstruction(self, connectorNodeId, volumeReconstructorDeviceId, outputSpacing, outputOrigin, outputExtent, responseCallbackMethod, liveOutputVolumeFilename, liveOutputVolumeDevice):
-    self.cmdStartVolumeReconstruction.SetCommandAttribute('VolumeReconstructorDeviceId', volumeReconstructorDeviceId)
-    self.cmdStartVolumeReconstruction.SetCommandAttribute('OutputSpacing', '%f %f %f' % tuple(outputSpacing))
-    self.cmdStartVolumeReconstruction.SetCommandAttribute('OutputOrigin', '%f %f %f' % tuple(outputOrigin))
-    self.cmdStartVolumeReconstruction.SetCommandAttribute('OutputExtent', '%i %i %i %i %i %i' % tuple(outputExtent))
-    self.cmdStartVolumeReconstruction.SetCommandAttribute('OutputVolFilename', liveOutputVolumeFilename)
-    self.cmdStartVolumeReconstruction.SetCommandAttribute('OutputVolDeviceName', liveOutputVolumeDevice)
+    content =           '<Command Name= '+ self.cmdStartVolumeReconstruction.GetName()
+    content = content + ' VolumeReconstructorDeviceId='+volumeReconstructorDeviceId
+    content = content + ('OutputSpacing=', '%f %f %f' % tuple(outputSpacing))
+    content = content + ('OutputOrigin=', '%f %f %f' % tuple(outputOrigin))
+    content = content + ('OutputExtent=', '%i %i %i %i %i %i' % tuple(outputExtent))
+    content = content + ' OutputVolFilename='+liveOutputVolumeFilename
+    content = content + ' OutputVolDeviceName='+liveOutputVolumeDevice
+    content = content + ' />'
+    self.cmdStartVolumeReconstruction.SetCommandContent(content)
     self.executeCommand(self.cmdStartVolumeReconstruction, connectorNodeId, responseCallbackMethod)
 
   def stopVolumeReconstruction(self, connectorNodeId, volumeReconstructorDeviceId, responseCallbackMethod, liveOutputVolumeFilename, liveOutputVolumeDevice):
-    self.cmdStopVolumeReconstruction.SetCommandAttribute('VolumeReconstructorDeviceId', volumeReconstructorDeviceId)
-    self.cmdStopVolumeReconstruction.SetCommandAttribute('OutputVolFilename', liveOutputVolumeFilename)
-    self.cmdStopVolumeReconstruction.SetCommandAttribute('OutputVolDeviceName', liveOutputVolumeDevice)
+    content =           '<Command Name= '+ self.cmdStopVolumeReconstruction.GetName()
+    content = content + ' VolumeReconstructorDeviceId='+volumeReconstructorDeviceId
+    content = content + ' OutputVolFilename='+liveOutputVolumeFilename
+    content = content + ' OutputVolDeviceName='+liveOutputVolumeDevice
+    content = content + ' />'
+    self.cmdStopVolumeReconstruction.SetCommandContent(content)
     self.executeCommand(self.cmdStopVolumeReconstruction, connectorNodeId, responseCallbackMethod)
 
   def reconstructRecorded(self, connectorNodeId, volumeReconstructorDeviceId, inputSequenceFilename, outputSpacing, responseCallbackMethod, outputVolumeFilename, outputVolumeDevice):
-    self.cmdReconstructRecorded.SetCommandAttribute('VolumeReconstructorDeviceId', volumeReconstructorDeviceId)
-    self.cmdReconstructRecorded.SetCommandAttribute('InputSeqFilename', inputSequenceFilename)
-    self.cmdReconstructRecorded.SetCommandAttribute('OutputSpacing', '%f %f %f' % tuple(outputSpacing))
-    self.cmdReconstructRecorded.SetCommandAttribute('OutputVolFilename', outputVolumeFilename)
-    self.cmdReconstructRecorded.SetCommandAttribute('OutputVolDeviceName', outputVolumeDevice)
+    content =           '<Command Name= '+ self.cmdReconstructRecorded.GetName()
+    content = content + ' VolumeReconstructorDeviceId='+volumeReconstructorDeviceId
+    content = content + ' InputSeqFilename='+InputSeqFilename
+    content = content + ('OutputSpacing', '%f %f %f' % tuple(outputSpacing))
+    content = content + ' OutputVolFilename='+outputVolumeFilename
+    content = content + ' OutputVolDeviceName='+outputVolumeDevice
+    content = content + ' />'
+    self.cmdReconstructRecorded.SetCommandContent(content)
     self.executeCommand(self.cmdReconstructRecorded, connectorNodeId, responseCallbackMethod)
 
   def startRecording(self, connectorNodeId, captureName, fileName, compression, responseCallbackMethod):
-    self.cmdStartRecording.SetCommandAttribute('CaptureDeviceId', captureName)
-    self.cmdStartRecording.SetCommandAttribute('OutputFilename', fileName)
-    self.cmdStartRecording.SetCommandAttribute('EnableCompression', str(compression))
+    content =           '<Command Name= '+ self.cmdStartRecording.GetName()
+    content = content + ' CaptureDeviceId='+captureName
+    content = content + ' OutputFilename='+fileName
+    content = content + ' EnableCompression='+ str(compression)
+    content = content + ' />'
+    self.cmdStartRecording.SetCommandContent(content)
     self.executeCommand(self.cmdStartRecording, connectorNodeId, responseCallbackMethod)
 
   def stopRecording(self, connectorNodeId, captureName, responseCallbackMethod):
-    self.cmdStopRecording.SetCommandAttribute('CaptureDeviceId', captureName)
+    content =           '<Command Name= '+ self.cmdStopRecording.GetName()
+    content = content + ' CaptureDeviceId='+captureName
+    content = content + ' />'
+    self.cmdStopRecording.SetCommandContent(content)
     self.executeCommand(self.cmdStopRecording, connectorNodeId, responseCallbackMethod)
 
   def getVolumeReconstructionSnapshot(self, connectorNodeId, volumeReconstructorDeviceId, fileName, deviceName, applyHoleFilling, responseCallbackMethod):
-    self.cmdGetVolumeReconstructionSnapshot.SetCommandAttribute('VolumeReconstructorDeviceId', volumeReconstructorDeviceId)
-    self.cmdGetVolumeReconstructionSnapshot.SetCommandAttribute('OutputVolFilename', fileName)
-    self.cmdGetVolumeReconstructionSnapshot.SetCommandAttribute('OutputVolDeviceName', deviceName)
-    self.cmdGetVolumeReconstructionSnapshot.SetCommandAttribute('ApplyHoleFilling', 'TRUE' if applyHoleFilling else 'FALSE')
+    content =           '<Command Name= '+ self.cmdGetVolumeReconstructionSnapshot.GetName()
+    content = content + ' VolumeReconstructorDeviceId='+volumeReconstructorDeviceId
+    content = content + ' OutputVolFilename='+fileName
+    content = content + ' OutputVolDeviceName='+deviceName
+    content = content + ' ApplyHoleFilling='+('TRUE' if applyHoleFilling else 'FALSE')
+    content = content + ' />'
+    self.cmdGetVolumeReconstructionSnapshot.SetCommandContent(content)
     self.executeCommand(self.cmdGetVolumeReconstructionSnapshot, connectorNodeId, responseCallbackMethod)
   
   def updateTransform(self, connectorNodeId, transformNode, responseCallbackMethod):
@@ -1516,13 +1529,15 @@ class PlusRemoteLogic(ScriptedLoadableModuleLogic):
     transformValue = transformValue[:-1] # remove last character (extra space at the end)
     # Get transform date as string
     transformDate = str(datetime.datetime.now())
-
-    self.cmdUpdateTransform.SetCommandAttribute('TransformName', transformNode.GetName())
-    self.cmdUpdateTransform.SetCommandAttribute('TransformValue', transformValue)
-    self.cmdUpdateTransform.SetCommandAttribute('TransformDate', transformDate)
+    content =           '<Command Name= '+ self.cmdUpdateTransform.GetName()
+    content = content + ' TransformName='+transformNode.GetName()
+    content = content + ' TransformValue='+transformValue
+    content = content + ' TransformDate='+transformDate
+    content = content + ' />'
+    self.cmdUpdateTransform.SetCommandContent(content)
     self.executeCommand(self.cmdUpdateTransform, connectorNodeId, responseCallbackMethod)
 
   def saveConfig(self, connectorNodeId, filename, responseCallbackMethod):
-    self.cmdSaveConfig.SetCommandAttribute('Filename', filename)
+    self.cmdSaveConfig.SetCommandContent('<Command Name= '+ self.cmdSaveConfig.GetName() + 'Filename'+ filename+' />')
     self.executeCommand(self.cmdSaveConfig, connectorNodeId, responseCallbackMethod)
 

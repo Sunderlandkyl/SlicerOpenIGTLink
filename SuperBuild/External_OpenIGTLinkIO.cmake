@@ -60,6 +60,7 @@ if(NOT DEFINED OpenIGTLinkIO_DIR AND NOT ${CMAKE_PROJECT_NAME}_USE_SYSTEM_${proj
       # Dependencies
       -DOpenIGTLink_DIR:PATH=${OpenIGTLink_DIR}
       -DVTK_DIR:PATH=${VTK_DIR}
+      -DVTK_WRAP_PYTHON:BOOL=${VTK_WRAP_PYTHON}
     INSTALL_COMMAND ""
     DEPENDS
       ${${proj}_DEPENDS}

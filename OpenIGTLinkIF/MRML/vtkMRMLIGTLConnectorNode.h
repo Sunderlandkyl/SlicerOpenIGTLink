@@ -18,20 +18,24 @@
 #include "vtkSlicerOpenIGTLinkIFModuleMRMLExport.h"
 #include "vtkMRMLIGTLQueryNode.h"
 
+// OpenIGTLinkIO includes
+#include "igtlioCommand.h"
+
 // MRML includes
 #include <vtkMRML.h>
 #include <vtkMRMLNode.h>
 #include <vtkMRMLStorageNode.h>
 #include <vtkMRMLScene.h>
 
+// VTK includes
 #include <vtkCallbackCommand.h>
 #include <vtkWeakPointer.h>
 
+// std includes
 #include <list>
 
 class vtkMRMLIGTLQueryNode;
 class vtkMutexLock;
-class vtkSlicerOpenIGTLinkCommand;
 
 typedef void* IGTLDevicePointer;
 
@@ -42,7 +46,7 @@ class VTK_SLICER_OPENIGTLINKIF_MODULE_MRML_EXPORT vtkMRMLIGTLConnectorNode : pub
   //----------------------------------------------------------------
   // Standard methods for MRML nodes
   //----------------------------------------------------------------
-  
+
   enum
   {
     ConnectedEvent = 118944,
@@ -55,6 +59,9 @@ class VTK_SLICER_OPENIGTLINKIF_MODULE_MRML_EXPORT vtkMRMLIGTLConnectorNode : pub
     RemovedDeviceEvent= 118951,
     CommandReceivedEvent = 119001, // COMMAND device got a query, COMMAND received
     CommandResponseReceivedEvent = 119002, // COMMAND device got a response, RTS_COMMAND received
+    CommandExpiredReceivedEvent = 119003, // COMMAND device did not get a response before timeout
+    CommandCancelledReceivedEvent = 119004, // COMMAND was cancelled before timeout
+    CommandCompletedReceivedEvent = 119005, // COMMAND device is completed (response, expired, or cancelled)
   };
 
   enum
@@ -224,27 +231,27 @@ class VTK_SLICER_OPENIGTLINKIF_MODULE_MRML_EXPORT vtkMRMLIGTLConnectorNode : pub
   /// - If using BLOCKING, the call blocks until a response appears or timeout. Return response.
   /// - If using ASYNCHRONOUS, wait for the CommandResponseReceivedEvent event. Return device.
   ///  TODO: return a command object that can be observed
-  void SendCommand(std::string device_id, std::string command, std::string content, bool blocking = true, double timeout_s = 5);
+  igtlioCommandPointer SendCommand(int clientID, std::string name, std::string content, bool blocking=true, double timeout_s=5.0, igtl::MessageBase::MetaDataMap* metaData=NULL);
 
   /// Sends the specified command and attaches an observer
   /// Blocking behavior and device_id are set in the command object
   /// Records the id of the command in the command object
   /// Invokes a CommandResponse event on the command object when a response is received.
-  void SendCommand(vtkSlicerOpenIGTLinkCommand* command);
+  bool SendCommand(int clientID, igtlioCommand * command);
 
   /// Send a command response from the given device. Asynchronous.
   /// Precondition: The given device has received a query that is not yet responded to.
   /// TODO: return a command object that can be observed
-  void SendCommandResponse(std::string device_id, std::string command, std::string content);
+  //void SendCommandResponse(std::string device_id, std::string command, std::string content);
 
   /// Send a commmand response from the specified command.
-  void SendCommandResponse(vtkSlicerOpenIGTLinkCommand* command);
+  void SendCommandResponse(igtlioCommand* command);
 
   /// Cancels the command in the specified device
-  void CancelCommand(std::string device_id, int command_id);
+  void CancelCommand(int commandID);
 
   /// Cancels the specified command
-  void CancelCommand(vtkSlicerOpenIGTLinkCommand* command);
+  void CancelCommand(igtlioCommand* command);
 
   //----------------------------------------------------------------
   // For OpenIGTLink time stamp access
