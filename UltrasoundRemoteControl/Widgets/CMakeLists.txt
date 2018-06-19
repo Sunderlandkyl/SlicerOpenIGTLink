@@ -9,11 +9,11 @@ set(${KIT}_INCLUDE_DIRECTORIES
   )
 
 set(${KIT}_SRCS
-  qSlicerUltrasoundDepthWidget.cxx
-  qSlicerUltrasoundDepthWidget.h
   qSlicerAbstractUltrasoundParameterWidget.cxx
   qSlicerAbstractUltrasoundParameterWidget.h
   qSlicerAbstractUltrasoundParameterWidget_p.h
+  qSlicerUltrasoundDepthWidget.cxx
+  qSlicerUltrasoundDepthWidget.h
   )
 
 set(${KIT}_MOC_SRCS
@@ -23,7 +23,6 @@ set(${KIT}_MOC_SRCS
   )
 
 set(${KIT}_UI_SRCS
-  Resources/UI/qSlicerUltrasoundDepthWidget.ui
   )
 
 set(${KIT}_RESOURCES

@@ -23,37 +23,47 @@
 
 // UltrasoundRemoteControl includes
 #include "qSlicerUltrasoundRemoteControlModuleWidgetsExport.h"
-#include "qSlicerAbstractUltrasoundParameterWidget.h"
-#include "qSlicerAbstractUltrasoundParameterWidget_p.h"
 
-#include <QWidget>
+#include <qMRMLWidget.h>
+
+// CTK includes
+#include <ctkVTKObject.h>
 
 class qSlicerUltrasoundDepthWidgetPrivate;
+class vtkMRMLIGTLConnectorNode;
 
 /// \ingroup Slicer_QtModules_UltrasoundRemoteControl
-class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDepthWidget
-  : public qSlicerAbstractUltrasoundParameterWidget
+class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDepthWidget : public qMRMLWidget
 {
   Q_OBJECT
+  QVTK_OBJECT
 
 public:
   typedef qSlicerUltrasoundDepthWidget Superclass;
-  /// Constructor
-  qSlicerUltrasoundDepthWidget(QWidget* parent = 0);
-  qSlicerUltrasoundDepthWidget(QWidget* parent, qSlicerUltrasoundDepthWidgetPrivate &d);
-
-  /// Destructor
+  explicit qSlicerUltrasoundDepthWidget(QWidget *parent = 0);
   virtual ~qSlicerUltrasoundDepthWidget();
 
+
+public slots:
   double getDepthMM();
   void setDepthMM(double depth);
 
+  virtual void onConnectionChanged();
   virtual void onConnected();
   virtual void onDisconnected();
 
-  virtual void setParameter();
   virtual void updateParameter();
   virtual void onUpdate();
+
+  void setConnectorNode(vtkMRMLIGTLConnectorNode* node);
+  vtkMRMLIGTLConnectorNode* getConnectorNode();
+
+  void setDeviceID(std::string deviceID);
+  std::string getDeviceID();
+
+protected:
+
+  QScopedPointer<qSlicerUltrasoundDepthWidgetPrivate> d_ptr;
 
 private:
   Q_DECLARE_PRIVATE(qSlicerUltrasoundDepthWidget);
