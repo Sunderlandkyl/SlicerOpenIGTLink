@@ -18,48 +18,42 @@
 
 ==============================================================================*/
 
-#ifndef __qSlicerUltrasoundDepthWidget_h
-#define __qSlicerUltrasoundDepthWidget_h
+#ifndef __qSlicerUltrasoundDynamicRangeWidget_h
+#define __qSlicerUltrasoundDynamicRangeWidget_h
 
 // UltrasoundRemoteControl includes
 #include "qSlicerUltrasoundRemoteControlModuleWidgetsExport.h"
 
 #include "qSlicerAbstractUltrasoundParameterWidget.h"
 
-class qSlicerUltrasoundDepthWidgetPrivate;
-class vtkMRMLIGTLConnectorNode;
+class qSlicerUltrasoundDynamicRangeWidgetPrivate;
+class vtkMRMLIGTLConnectorNode; 
 
 /// \ingroup Slicer_QtModules_UltrasoundRemoteControl
-class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDepthWidget : public qSlicerAbstractUltrasoundParameterWidget
+class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDynamicRangeWidget : public qSlicerAbstractUltrasoundParameterWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
 public:
   typedef qSlicerAbstractUltrasoundParameterWidget Superclass;
-  explicit qSlicerUltrasoundDepthWidget(QWidget *parent = 0);
-  virtual ~qSlicerUltrasoundDepthWidget();
+  explicit qSlicerUltrasoundDynamicRangeWidget(QWidget *parent = 0);
+  virtual ~qSlicerUltrasoundDynamicRangeWidget();
 
 public slots:
-  double getDepthMM();
-  void setDepthMM(double depth);
+  double getDynamicRangeDb();
+  void setDynamicRangeDb(double dynamicRange);
 
   virtual void onConnected();
   virtual void onDisconnected();
-
-  //virtual void setUltrasoundParameter();
-  //virtual void setUltrasoundParameterCompleted();
-
-  //virtual void getUltrasoundParameter();
-  //virtual void getUltrasoundParameterCompleted();
 
 protected:
 
   virtual std::string getParameterValue();
 
 private:
-  Q_DECLARE_PRIVATE(qSlicerUltrasoundDepthWidget);
-  Q_DISABLE_COPY(qSlicerUltrasoundDepthWidget);
+  Q_DECLARE_PRIVATE(qSlicerUltrasoundDynamicRangeWidget);
+  Q_DISABLE_COPY(qSlicerUltrasoundDynamicRangeWidget);
 };
 
 #endif

@@ -14,12 +14,21 @@ set(${KIT}_SRCS
   qSlicerAbstractUltrasoundParameterWidget_p.h
   qSlicerUltrasoundDepthWidget.cxx
   qSlicerUltrasoundDepthWidget.h
+  qSlicerUltrasoundGainWidget.cxx
+  qSlicerUltrasoundGainWidget.h
+  qSlicerUltrasoundFrequencyWidget.cxx
+  qSlicerUltrasoundFrequencyWidget.h
+  qSlicerUltrasoundDynamicRangeWidget.cxx
+  qSlicerUltrasoundDynamicRangeWidget.h
   )
 
 set(${KIT}_MOC_SRCS
-  qSlicerUltrasoundDepthWidget.h
   qSlicerAbstractUltrasoundParameterWidget.h
   qSlicerAbstractUltrasoundParameterWidget_p.h
+  qSlicerUltrasoundDepthWidget.h
+  qSlicerUltrasoundGainWidget.h
+  qSlicerUltrasoundFrequencyWidget.h
+  qSlicerUltrasoundDynamicRangeWidget.h
   )
 
 set(${KIT}_UI_SRCS

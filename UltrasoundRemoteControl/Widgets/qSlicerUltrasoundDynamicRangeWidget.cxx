@@ -19,7 +19,7 @@
 ==============================================================================*/
 
 // UltrasoundRemoteControl includes
-#include "qSlicerUltrasoundDepthWidget.h"
+#include "qSlicerUltrasoundDynamicRangeWidget.h"
 #include "qSlicerAbstractUltrasoundParameterWidget.h"
 #include "qSlicerAbstractUltrasoundParameterWidget_p.h"
 
@@ -37,94 +37,96 @@
 #include <ctkSliderWidget.h>
 
 //-----------------------------------------------------------------------------
-class qSlicerUltrasoundDepthWidgetPrivate : qSlicerAbstractUltrasoundParameterWidgetPrivate
+class qSlicerUltrasoundDynamicRangeWidgetPrivate : qSlicerAbstractUltrasoundParameterWidgetPrivate
 {
 public:
-  Q_DECLARE_PUBLIC(qSlicerUltrasoundDepthWidget);
+  Q_DECLARE_PUBLIC(qSlicerUltrasoundDynamicRangeWidget);
 
-  qSlicerUltrasoundDepthWidgetPrivate(qSlicerUltrasoundDepthWidget& p);
-  ~qSlicerUltrasoundDepthWidgetPrivate();
+  qSlicerUltrasoundDynamicRangeWidgetPrivate(qSlicerUltrasoundDynamicRangeWidget& p);
+  ~qSlicerUltrasoundDynamicRangeWidgetPrivate();
 
 public:
   virtual void init();
-  virtual void setupUi(QWidget *qSlicerUltrasoundDepthWidget);
+  virtual void setupUi(QWidget *qSlicerUltrasoundDynamicRangeWidget);
 
 protected:
-  qSlicerUltrasoundDepthWidget* const q_ptr;
+  qSlicerUltrasoundDynamicRangeWidget* const q_ptr;
 
 public:
   QHBoxLayout *horizontalLayout;
   QLabel *label;
-  ctkSliderWidget *depthSlider;
+  ctkSliderWidget *dynamicRangeSlider;
 };
 
 //-----------------------------------------------------------------------------
-qSlicerUltrasoundDepthWidgetPrivate::qSlicerUltrasoundDepthWidgetPrivate(qSlicerUltrasoundDepthWidget& object)
+qSlicerUltrasoundDynamicRangeWidgetPrivate::qSlicerUltrasoundDynamicRangeWidgetPrivate(qSlicerUltrasoundDynamicRangeWidget& object)
   : qSlicerAbstractUltrasoundParameterWidgetPrivate(&object)
   , q_ptr(&object)
 {
-  this->ParameterName = "DepthMm";
+  this->ParameterName = "DynRangeDb";
 }
 
 //-----------------------------------------------------------------------------
-qSlicerUltrasoundDepthWidgetPrivate::~qSlicerUltrasoundDepthWidgetPrivate()
+qSlicerUltrasoundDynamicRangeWidgetPrivate::~qSlicerUltrasoundDynamicRangeWidgetPrivate()
 {
-  Q_Q(qSlicerUltrasoundDepthWidget);
+  Q_Q(qSlicerUltrasoundDynamicRangeWidget);
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidgetPrivate::init()
+void qSlicerUltrasoundDynamicRangeWidgetPrivate::init()
 {
-  Q_Q(qSlicerUltrasoundDepthWidget);
+  Q_Q(qSlicerUltrasoundDynamicRangeWidget);
   qSlicerAbstractUltrasoundParameterWidgetPrivate::init();
 
   this->setupUi(q);
-  QObject::connect(this->depthSlider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
+  QObject::connect(this->dynamicRangeSlider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidgetPrivate::setupUi(QWidget *qSlicerUltrasoundDepthWidget)
+void qSlicerUltrasoundDynamicRangeWidgetPrivate::setupUi(QWidget *qSlicerUltrasoundDynamicRangeWidget)
 {
-  if (qSlicerUltrasoundDepthWidget->objectName().isEmpty())
+  if (qSlicerUltrasoundDynamicRangeWidget->objectName().isEmpty())
   {
-    qSlicerUltrasoundDepthWidget->setObjectName(QStringLiteral("qSlicerUltrasoundDepthWidget"));
+    qSlicerUltrasoundDynamicRangeWidget->setObjectName(QStringLiteral("qSlicerUltrasoundDynamicRangeWidget"));
   }
 
-  qSlicerUltrasoundDepthWidget->resize(388, 44);
+  qSlicerUltrasoundDynamicRangeWidget->resize(388, 44);
   QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
   sizePolicy.setHorizontalStretch(0);
   sizePolicy.setVerticalStretch(0);
-  sizePolicy.setHeightForWidth(qSlicerUltrasoundDepthWidget->sizePolicy().hasHeightForWidth());
-  qSlicerUltrasoundDepthWidget->setSizePolicy(sizePolicy);
-  qSlicerUltrasoundDepthWidget->setMinimumSize(QSize(10, 10));
-  horizontalLayout = new QHBoxLayout(qSlicerUltrasoundDepthWidget);
+  sizePolicy.setHeightForWidth(qSlicerUltrasoundDynamicRangeWidget->sizePolicy().hasHeightForWidth());
+  qSlicerUltrasoundDynamicRangeWidget->setSizePolicy(sizePolicy);
+  qSlicerUltrasoundDynamicRangeWidget->setMinimumSize(QSize(10, 10));
+  horizontalLayout = new QHBoxLayout(qSlicerUltrasoundDynamicRangeWidget);
   horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
   horizontalLayout->setSizeConstraint(QLayout::SetMinimumSize);
-  label = new QLabel(qSlicerUltrasoundDepthWidget);
+  label = new QLabel(qSlicerUltrasoundDynamicRangeWidget);
   label->setObjectName(QStringLiteral("label"));
-  label->setText("Depth (mm):");
+  label->setText("Dynamic range (dB):");
 
   horizontalLayout->addWidget(label);
 
-  depthSlider = new ctkSliderWidget(qSlicerUltrasoundDepthWidget);
-  depthSlider->setObjectName(QStringLiteral("depthSlider"));
-  depthSlider->setMinimum(10);
-  depthSlider->setMaximum(150);
-  depthSlider->setTracking(false);
+  dynamicRangeSlider = new ctkSliderWidget(qSlicerUltrasoundDynamicRangeWidget);
+  dynamicRangeSlider->setObjectName(QStringLiteral("dynamicRangeSlider"));
+  dynamicRangeSlider->setPageStep(10);
+  dynamicRangeSlider->setSingleStep(1);
+  dynamicRangeSlider->setMinimum(10);
+  dynamicRangeSlider->setMaximum(100);
+  dynamicRangeSlider->setTracking(false);
 
-  horizontalLayout->addWidget(depthSlider);
+  horizontalLayout->addWidget(dynamicRangeSlider);
 
-  QMetaObject::connectSlotsByName(qSlicerUltrasoundDepthWidget);
+  QMetaObject::connectSlotsByName(qSlicerUltrasoundDynamicRangeWidget);
 }
 
 //-----------------------------------------------------------------------------
-// qSlicerUltrasoundDepthWidget methods
+// qSlicerUltrasoundDynamicRangeWidget methods
 
 //-----------------------------------------------------------------------------
-qSlicerUltrasoundDepthWidget::qSlicerUltrasoundDepthWidget(QWidget* _parent)
-  : qSlicerAbstractUltrasoundParameterWidget(new qSlicerUltrasoundDepthWidgetPrivate(*this))
+qSlicerUltrasoundDynamicRangeWidget::qSlicerUltrasoundDynamicRangeWidget(QWidget* _parent)
+  : qSlicerAbstractUltrasoundParameterWidget(new qSlicerUltrasoundDynamicRangeWidgetPrivate(*this))
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
+  Q_D(qSlicerUltrasoundDynamicRangeWidget);
   d->init();
   this->qvtkConnect(d->CmdSetParameter, vtkSlicerOpenIGTLinkCommand::CommandCompletedEvent, this, SLOT(setUltrasoundParameterCompleted));
   this->qvtkConnect(d->CmdGetParameter, vtkSlicerOpenIGTLinkCommand::CommandCompletedEvent, this, SLOT(getUltrasoundParameterCompleted));
@@ -133,40 +135,40 @@ qSlicerUltrasoundDepthWidget::qSlicerUltrasoundDepthWidget(QWidget* _parent)
 }
 
 //-----------------------------------------------------------------------------
-qSlicerUltrasoundDepthWidget::~qSlicerUltrasoundDepthWidget()
+qSlicerUltrasoundDynamicRangeWidget::~qSlicerUltrasoundDynamicRangeWidget()
 {
 }
 
 //-----------------------------------------------------------------------------
-double qSlicerUltrasoundDepthWidget::getDepthMM()
+double qSlicerUltrasoundDynamicRangeWidget::getDynamicRangeDb()
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
-  return d->depthSlider->value();
+  Q_D(qSlicerUltrasoundDynamicRangeWidget);
+  return d->dynamicRangeSlider->value();
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidget::setDepthMM(double depth)
+void qSlicerUltrasoundDynamicRangeWidget::setDynamicRangeDb(double dynamicRange)
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
-  return d->depthSlider->setValue(depth);
+  Q_D(qSlicerUltrasoundDynamicRangeWidget);
+  return d->dynamicRangeSlider->setValue(dynamicRange);
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidget::onConnected()
+void qSlicerUltrasoundDynamicRangeWidget::onConnected()
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
-  d->depthSlider->setEnabled(true);
+  Q_D(qSlicerUltrasoundDynamicRangeWidget);
+  d->dynamicRangeSlider->setEnabled(true);
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidget::onDisconnected()
+void qSlicerUltrasoundDynamicRangeWidget::onDisconnected()
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
-  d->depthSlider->setDisabled(true);
+  Q_D(qSlicerUltrasoundDynamicRangeWidget);
+  d->dynamicRangeSlider->setDisabled(true);
 }
 
 //-----------------------------------------------------------------------------
-std::string qSlicerUltrasoundDepthWidget::getParameterValue()
+std::string qSlicerUltrasoundDynamicRangeWidget::getParameterValue()
 {
-  return vtkVariant(this->getDepthMM()).ToString();
+  return vtkVariant(this->getDynamicRangeDb()).ToString();
 }

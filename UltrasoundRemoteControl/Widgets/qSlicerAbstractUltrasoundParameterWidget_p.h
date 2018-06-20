@@ -21,22 +21,29 @@
 #ifndef __qSlicerAbstractUltrasoundParameterWidget_p_h
 #define __qSlicerAbstractUltrasoundParameterWidget_p_h
 
+#include <vtkSetGet.h>
+
 //-----------------------------------------------------------------------------
 class qSlicerAbstractUltrasoundParameterWidgetPrivate
 {
 public:
-
   Q_DECLARE_PUBLIC(qSlicerAbstractUltrasoundParameterWidget);
 
+public:
   qSlicerAbstractUltrasoundParameterWidgetPrivate(qSlicerAbstractUltrasoundParameterWidget *q);
+  virtual void init();
+
+protected:
+    qSlicerAbstractUltrasoundParameterWidget* const q_ptr;
+
+public:
   vtkSmartPointer<vtkMRMLIGTLConnectorNode> ConnectorNode;
 
   std::string ParameterName;
-  std::string ParameterValue;
+  std::string DeviceID = "";
   vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> CmdSetParameter;
-  vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> CmdUpdateParameter;
+  vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> CmdGetParameter;
 
-  qSlicerAbstractUltrasoundParameterWidget *q_ptr;
 };
 
 #endif

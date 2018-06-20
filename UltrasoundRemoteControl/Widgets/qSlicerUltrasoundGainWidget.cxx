@@ -19,7 +19,7 @@
 ==============================================================================*/
 
 // UltrasoundRemoteControl includes
-#include "qSlicerUltrasoundDepthWidget.h"
+#include "qSlicerUltrasoundGainWidget.h"
 #include "qSlicerAbstractUltrasoundParameterWidget.h"
 #include "qSlicerAbstractUltrasoundParameterWidget_p.h"
 
@@ -37,94 +37,94 @@
 #include <ctkSliderWidget.h>
 
 //-----------------------------------------------------------------------------
-class qSlicerUltrasoundDepthWidgetPrivate : qSlicerAbstractUltrasoundParameterWidgetPrivate
+class qSlicerUltrasoundGainWidgetPrivate : qSlicerAbstractUltrasoundParameterWidgetPrivate
 {
 public:
-  Q_DECLARE_PUBLIC(qSlicerUltrasoundDepthWidget);
+  Q_DECLARE_PUBLIC(qSlicerUltrasoundGainWidget);
 
-  qSlicerUltrasoundDepthWidgetPrivate(qSlicerUltrasoundDepthWidget& p);
-  ~qSlicerUltrasoundDepthWidgetPrivate();
+  qSlicerUltrasoundGainWidgetPrivate(qSlicerUltrasoundGainWidget& p);
+  ~qSlicerUltrasoundGainWidgetPrivate();
 
 public:
   virtual void init();
-  virtual void setupUi(QWidget *qSlicerUltrasoundDepthWidget);
+  virtual void setupUi(QWidget *qSlicerUltrasoundGainWidget);
 
 protected:
-  qSlicerUltrasoundDepthWidget* const q_ptr;
+  qSlicerUltrasoundGainWidget* const q_ptr;
 
 public:
   QHBoxLayout *horizontalLayout;
   QLabel *label;
-  ctkSliderWidget *depthSlider;
+  ctkSliderWidget *gainSlider;
 };
 
 //-----------------------------------------------------------------------------
-qSlicerUltrasoundDepthWidgetPrivate::qSlicerUltrasoundDepthWidgetPrivate(qSlicerUltrasoundDepthWidget& object)
+qSlicerUltrasoundGainWidgetPrivate::qSlicerUltrasoundGainWidgetPrivate(qSlicerUltrasoundGainWidget& object)
   : qSlicerAbstractUltrasoundParameterWidgetPrivate(&object)
   , q_ptr(&object)
 {
-  this->ParameterName = "DepthMm";
+  this->ParameterName = "GainPercent";
 }
 
 //-----------------------------------------------------------------------------
-qSlicerUltrasoundDepthWidgetPrivate::~qSlicerUltrasoundDepthWidgetPrivate()
+qSlicerUltrasoundGainWidgetPrivate::~qSlicerUltrasoundGainWidgetPrivate()
 {
-  Q_Q(qSlicerUltrasoundDepthWidget);
+  Q_Q(qSlicerUltrasoundGainWidget);
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidgetPrivate::init()
+void qSlicerUltrasoundGainWidgetPrivate::init()
 {
-  Q_Q(qSlicerUltrasoundDepthWidget);
+  Q_Q(qSlicerUltrasoundGainWidget);
   qSlicerAbstractUltrasoundParameterWidgetPrivate::init();
 
   this->setupUi(q);
-  QObject::connect(this->depthSlider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
+  QObject::connect(this->gainSlider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidgetPrivate::setupUi(QWidget *qSlicerUltrasoundDepthWidget)
+void qSlicerUltrasoundGainWidgetPrivate::setupUi(QWidget *qSlicerUltrasoundGainWidget)
 {
-  if (qSlicerUltrasoundDepthWidget->objectName().isEmpty())
+  if (qSlicerUltrasoundGainWidget->objectName().isEmpty())
   {
-    qSlicerUltrasoundDepthWidget->setObjectName(QStringLiteral("qSlicerUltrasoundDepthWidget"));
+    qSlicerUltrasoundGainWidget->setObjectName(QStringLiteral("qSlicerUltrasoundGainWidget"));
   }
 
-  qSlicerUltrasoundDepthWidget->resize(388, 44);
+  qSlicerUltrasoundGainWidget->resize(388, 44);
   QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
   sizePolicy.setHorizontalStretch(0);
   sizePolicy.setVerticalStretch(0);
-  sizePolicy.setHeightForWidth(qSlicerUltrasoundDepthWidget->sizePolicy().hasHeightForWidth());
-  qSlicerUltrasoundDepthWidget->setSizePolicy(sizePolicy);
-  qSlicerUltrasoundDepthWidget->setMinimumSize(QSize(10, 10));
-  horizontalLayout = new QHBoxLayout(qSlicerUltrasoundDepthWidget);
+  sizePolicy.setHeightForWidth(qSlicerUltrasoundGainWidget->sizePolicy().hasHeightForWidth());
+  qSlicerUltrasoundGainWidget->setSizePolicy(sizePolicy);
+  qSlicerUltrasoundGainWidget->setMinimumSize(QSize(10, 10));
+  horizontalLayout = new QHBoxLayout(qSlicerUltrasoundGainWidget);
   horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
   horizontalLayout->setSizeConstraint(QLayout::SetMinimumSize);
-  label = new QLabel(qSlicerUltrasoundDepthWidget);
+  label = new QLabel(qSlicerUltrasoundGainWidget);
   label->setObjectName(QStringLiteral("label"));
-  label->setText("Depth (mm):");
+  label->setText("Gain (%):");
 
   horizontalLayout->addWidget(label);
 
-  depthSlider = new ctkSliderWidget(qSlicerUltrasoundDepthWidget);
-  depthSlider->setObjectName(QStringLiteral("depthSlider"));
-  depthSlider->setMinimum(10);
-  depthSlider->setMaximum(150);
-  depthSlider->setTracking(false);
+  gainSlider = new ctkSliderWidget(qSlicerUltrasoundGainWidget);
+  gainSlider->setObjectName(QStringLiteral("gainSlider"));
+  gainSlider->setMinimum(0);
+  gainSlider->setMaximum(100);
+  gainSlider->setTracking(false);
 
-  horizontalLayout->addWidget(depthSlider);
+  horizontalLayout->addWidget(gainSlider);
 
-  QMetaObject::connectSlotsByName(qSlicerUltrasoundDepthWidget);
+  QMetaObject::connectSlotsByName(qSlicerUltrasoundGainWidget);
 }
 
 //-----------------------------------------------------------------------------
-// qSlicerUltrasoundDepthWidget methods
+// qSlicerUltrasoundGainWidget methods
 
 //-----------------------------------------------------------------------------
-qSlicerUltrasoundDepthWidget::qSlicerUltrasoundDepthWidget(QWidget* _parent)
-  : qSlicerAbstractUltrasoundParameterWidget(new qSlicerUltrasoundDepthWidgetPrivate(*this))
+qSlicerUltrasoundGainWidget::qSlicerUltrasoundGainWidget(QWidget* _parent)
+  : qSlicerAbstractUltrasoundParameterWidget(new qSlicerUltrasoundGainWidgetPrivate(*this))
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
+  Q_D(qSlicerUltrasoundGainWidget);
   d->init();
   this->qvtkConnect(d->CmdSetParameter, vtkSlicerOpenIGTLinkCommand::CommandCompletedEvent, this, SLOT(setUltrasoundParameterCompleted));
   this->qvtkConnect(d->CmdGetParameter, vtkSlicerOpenIGTLinkCommand::CommandCompletedEvent, this, SLOT(getUltrasoundParameterCompleted));
@@ -133,40 +133,40 @@ qSlicerUltrasoundDepthWidget::qSlicerUltrasoundDepthWidget(QWidget* _parent)
 }
 
 //-----------------------------------------------------------------------------
-qSlicerUltrasoundDepthWidget::~qSlicerUltrasoundDepthWidget()
+qSlicerUltrasoundGainWidget::~qSlicerUltrasoundGainWidget()
 {
 }
 
 //-----------------------------------------------------------------------------
-double qSlicerUltrasoundDepthWidget::getDepthMM()
+double qSlicerUltrasoundGainWidget::getGainPercent()
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
-  return d->depthSlider->value();
+  Q_D(qSlicerUltrasoundGainWidget);
+  return d->gainSlider->value();
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidget::setDepthMM(double depth)
+void qSlicerUltrasoundGainWidget::setGainPercent(double gain)
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
-  return d->depthSlider->setValue(depth);
+  Q_D(qSlicerUltrasoundGainWidget);
+  return d->gainSlider->setValue(gain);
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidget::onConnected()
+void qSlicerUltrasoundGainWidget::onConnected()
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
-  d->depthSlider->setEnabled(true);
+  Q_D(qSlicerUltrasoundGainWidget);
+  d->gainSlider->setEnabled(true);
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDepthWidget::onDisconnected()
+void qSlicerUltrasoundGainWidget::onDisconnected()
 {
-  Q_D(qSlicerUltrasoundDepthWidget);
-  d->depthSlider->setDisabled(true);
+  Q_D(qSlicerUltrasoundGainWidget);
+  d->gainSlider->setDisabled(true);
 }
 
 //-----------------------------------------------------------------------------
-std::string qSlicerUltrasoundDepthWidget::getParameterValue()
+std::string qSlicerUltrasoundGainWidget::getParameterValue()
 {
-  return vtkVariant(this->getDepthMM()).ToString();
+  return vtkVariant(this->getGainPercent()).ToString();
 }

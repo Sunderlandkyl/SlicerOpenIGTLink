@@ -23,28 +23,41 @@
 
 #include "vtkSlicerOpenIGTLinkCommand.h"
 
+// VTK includes
+#include <vtkXMLUtilities.h>
+
+const std::string PLUS_SERVER_LAUNCHER_REMOTE_DEVICE_ID = "US_Remote";
+
 //-----------------------------------------------------------------------------
 qSlicerAbstractUltrasoundParameterWidgetPrivate::qSlicerAbstractUltrasoundParameterWidgetPrivate(qSlicerAbstractUltrasoundParameterWidget *q)
-  : ParameterName("")
-  , ParameterValue("")
+  : q_ptr(q)
+  , ParameterName("")
   , CmdSetParameter(vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New())
-  , CmdUpdateParameter(vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New())
+  , CmdGetParameter(vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New())
   , ConnectorNode(NULL)
-  , q_ptr(q)
 {
 }
 
 //-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidgetPrivate::init()
+{
+  Q_Q(qSlicerAbstractUltrasoundParameterWidget);
+  this->CmdSetParameter->SetCommandName("SetUsParameter");
+  this->CmdSetParameter->SetDeviceID(PLUS_SERVER_LAUNCHER_REMOTE_DEVICE_ID);
+  this->CmdSetParameter->BlockingOff();
+  this->CmdSetParameter->SetCommandTimeoutSec(1.0);
+}
+
+//-----------------------------------------------------------------------------
 qSlicerAbstractUltrasoundParameterWidget::qSlicerAbstractUltrasoundParameterWidget(QWidget* parentWidget)
-  : QWidget(parentWidget)
+  : qMRMLWidget(parentWidget)
   , d_ptr(new qSlicerAbstractUltrasoundParameterWidgetPrivate(this))
 {
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractUltrasoundParameterWidget::qSlicerAbstractUltrasoundParameterWidget(QWidget* parentWidget, qSlicerAbstractUltrasoundParameterWidgetPrivate &d)
-  : QWidget(parentWidget)
-  , d_ptr(&d)
+qSlicerAbstractUltrasoundParameterWidget::qSlicerAbstractUltrasoundParameterWidget(qSlicerAbstractUltrasoundParameterWidgetPrivate* d)
+  : d_ptr(d)
 {
 }
 
@@ -61,8 +74,70 @@ vtkMRMLIGTLConnectorNode* qSlicerAbstractUltrasoundParameterWidget::getConnector
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerAbstractUltrasoundParameterWidget::setConnectorNode(vtkMRMLIGTLConnectorNode* connectorNode)
+void qSlicerAbstractUltrasoundParameterWidget::setConnectorNode(vtkMRMLIGTLConnectorNode* node)
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
-  d->ConnectorNode = connectorNode;
+
+  this->qvtkReconnect(d->ConnectorNode, node, vtkCommand::ModifiedEvent, this, SLOT(onConnectionChanged()));
+  this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::ConnectedEvent, this, SLOT(onConnectionChanged()));
+  this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::DisconnectedEvent, this, SLOT(onConnectionChanged()));
+  d->ConnectorNode = node;
+  this->onConnectionChanged();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::onConnectionChanged()
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  if (d->ConnectorNode && d->ConnectorNode->GetState() == vtkMRMLIGTLConnectorNode::StateConnected)
+  {
+    this->onConnected();
+  }
+  else
+  {
+    this->onDisconnected();
+  }
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::setDeviceID(std::string deviceID)
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  d->DeviceID = deviceID;
+}
+
+//-----------------------------------------------------------------------------
+std::string qSlicerAbstractUltrasoundParameterWidget::getDeviceID()
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  return d->DeviceID;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  
+  if (!d->ConnectorNode)
+  {
+    return;
+  }
+
+  std::string parameterValue = this->getParameterValue();
+
+  vtkNew<vtkXMLDataElement> rootElement;
+  rootElement->SetName("Command");
+  rootElement->SetAttribute("Name", "SetUsParameter");
+  rootElement->SetAttribute("UsDeviceId", "VideoDevice"); //TODO: currently hardcoded
+  vtkNew<vtkXMLDataElement> nestedElement;
+  nestedElement->SetName("Parameter");
+  nestedElement->SetAttribute("Name", d->ParameterName.c_str());
+  nestedElement->SetAttribute("Value", parameterValue.c_str());
+  rootElement->AddNestedElement(nestedElement);
+  
+  std::stringstream ss;
+  vtkXMLUtilities::FlattenElement(rootElement, ss);
+  
+  d->CmdSetParameter->SetCommandText(ss.str());
+  d->ConnectorNode->SendCommand(d->CmdSetParameter);
 }

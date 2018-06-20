@@ -36,12 +36,62 @@ class UltrasoundRemoteControlWidget(ScriptedLoadableModuleWidget):
       self.errorLabel = qt.QLabel("Could not find OpenIGTLink Remote module")
       self.layout.addWidget(self.errorLabel)
       return
-      
-    # Parameter sets
-    depthWidget = slicer.qSlicerUltrasoundDepthWidget()
-    self.layout.addWidget(depthWidget)
+
+    # Plus remote launcher
+
+    #self.plusServerLauncher = 
+
+    # Plus parameters
+    plusParametersCollapsibleButton = ctk.ctkCollapsibleButton()
+    plusParametersCollapsibleButton.text = "Plus parameters"
+    plusParametersCollapsibleButton.collapsed = False
+    self.layout.addWidget(plusParametersCollapsibleButton)
+    plusParametersLayout = qt.QFormLayout(plusParametersCollapsibleButton)
+
+    self.connectorNodeSelector = slicer.qMRMLNodeComboBox()
+    self.connectorNodeSelector.nodeTypes = ( ("vtkMRMLIGTLConnectorNode"), "" )
+    self.connectorNodeSelector.setMRMLScene(slicer.mrmlScene)
+    plusParametersLayout.addRow("Connector node:", self.connectorNodeSelector)
+    
+    self.deviceIDLineEdit = qt.QLineEdit()
+    plusParametersLayout.addRow("Device ID:", self.deviceIDLineEdit)
+
+    # Ultrasound parameters
+    ultrasoundParametersCollapsibleButton = ctk.ctkCollapsibleButton()
+    ultrasoundParametersCollapsibleButton.text = "Ultrasound parameters"
+    ultrasoundParametersCollapsibleButton.collapsed = False
+    self.layout.addWidget(ultrasoundParametersCollapsibleButton)
+    ultrasoundParametersLayout = qt.QFormLayout(ultrasoundParametersCollapsibleButton)
+    
+    self.depthWidget = slicer.qSlicerUltrasoundDepthWidget()
+    ultrasoundParametersLayout.addWidget(self.depthWidget)
+    
+    self.gainWidget = slicer.qSlicerUltrasoundGainWidget()
+    ultrasoundParametersLayout.addWidget(self.gainWidget)
+
+    self.frequencyWidget = slicer.qSlicerUltrasoundFrequencyWidget()
+    ultrasoundParametersLayout.addWidget(self.frequencyWidget)
+
+    self.dunamicRangeWidget = slicer.qSlicerUltrasoundDynamicRangeWidget()
+    ultrasoundParametersLayout.addWidget(self.dunamicRangeWidget)
     
     self.layout.addStretch(1)
+    
+    self.parameterWidgets = [
+    self.depthWidget,
+    self.gainWidget,
+    self.frequencyWidget,
+    self.dunamicRangeWidget,
+    ]
+    
+    self.connectorNodeSelector.connect("nodeActivated(vtkMRMLNode*)", self.onConnectorNodeSelected)
+
+  def onReload(self):
+    pass
+  
+  def onConnectorNodeSelected(self, connectorNode):
+    for widget in self.parameterWidgets:
+      widget.setConnectorNode(connectorNode)
 
 #
 # UltrasoundRemoteControlLogic

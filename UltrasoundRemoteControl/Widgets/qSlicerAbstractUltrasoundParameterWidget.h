@@ -33,37 +33,45 @@
 // OpenIGTLinkIF includes
 #include <vtkMRMLIGTLConnectorNode.h>
 
+#include <qMRMLWidget.h>
+
+// CTK includes
+#include <ctkVTKObject.h>
+
 class qSlicerAbstractUltrasoundParameterWidgetPrivate;
 
 /// \ingroup Slicer_QtModules_UltrasoundRemoteControl
-class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerAbstractUltrasoundParameterWidget : public QWidget
+class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerAbstractUltrasoundParameterWidget : public qMRMLWidget
 {
   Q_OBJECT
+  QVTK_OBJECT
 
 public:
-  typedef QWidget Superclass;
-  /// Constructor
+  typedef qMRMLWidget Superclass;
   qSlicerAbstractUltrasoundParameterWidget(QWidget* parent = 0);
-  qSlicerAbstractUltrasoundParameterWidget(QWidget* parent, qSlicerAbstractUltrasoundParameterWidgetPrivate &d);
-
-  /// Destructor
   virtual ~qSlicerAbstractUltrasoundParameterWidget();
+
+protected:
+  qSlicerAbstractUltrasoundParameterWidget(qSlicerAbstractUltrasoundParameterWidgetPrivate* d);
 
 public slots:
 
   vtkMRMLIGTLConnectorNode* getConnectorNode();
   void setConnectorNode(vtkMRMLIGTLConnectorNode* connectorNode);
 
-  virtual void onConnected() = 0;
-  virtual void onDisconnected() = 0;
+  virtual void onConnectionChanged();
+  virtual void onConnected() {};
+  virtual void onDisconnected() {};
 
-  virtual void setParameter() = 0;
-  virtual void updateParameter() = 0;
-  virtual void onUpdate() = 0;
+  virtual void setUltrasoundParameter();
+  //virtual void getUltrasoundParameter();
+
+  void setDeviceID(std::string deviceID);
+  std::string getDeviceID();
 
 protected:
 
-  qSlicerAbstractUltrasoundParameterWidget(qSlicerAbstractUltrasoundParameterWidgetPrivate &dd, QWidget* parent = nullptr);
+  virtual std::string getParameterValue() { return ""; };
 
   QScopedPointer<qSlicerAbstractUltrasoundParameterWidgetPrivate> d_ptr;
 

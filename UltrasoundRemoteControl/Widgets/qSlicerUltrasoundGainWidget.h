@@ -18,31 +18,31 @@
 
 ==============================================================================*/
 
-#ifndef __qSlicerUltrasoundDepthWidget_h
-#define __qSlicerUltrasoundDepthWidget_h
+#ifndef __qSlicerUltrasoundGainWidget_h
+#define __qSlicerUltrasoundGainWidget_h
 
 // UltrasoundRemoteControl includes
 #include "qSlicerUltrasoundRemoteControlModuleWidgetsExport.h"
 
 #include "qSlicerAbstractUltrasoundParameterWidget.h"
 
-class qSlicerUltrasoundDepthWidgetPrivate;
-class vtkMRMLIGTLConnectorNode;
+class qSlicerUltrasoundGainWidgetPrivate;
+class vtkMRMLIGTLConnectorNode; 
 
 /// \ingroup Slicer_QtModules_UltrasoundRemoteControl
-class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDepthWidget : public qSlicerAbstractUltrasoundParameterWidget
+class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundGainWidget : public qSlicerAbstractUltrasoundParameterWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
 public:
   typedef qSlicerAbstractUltrasoundParameterWidget Superclass;
-  explicit qSlicerUltrasoundDepthWidget(QWidget *parent = 0);
-  virtual ~qSlicerUltrasoundDepthWidget();
+  explicit qSlicerUltrasoundGainWidget(QWidget *parent = 0);
+  virtual ~qSlicerUltrasoundGainWidget();
 
 public slots:
-  double getDepthMM();
-  void setDepthMM(double depth);
+  double getGainPercent();
+  void setGainPercent(double gain);
 
   virtual void onConnected();
   virtual void onDisconnected();
@@ -58,8 +58,8 @@ protected:
   virtual std::string getParameterValue();
 
 private:
-  Q_DECLARE_PRIVATE(qSlicerUltrasoundDepthWidget);
-  Q_DISABLE_COPY(qSlicerUltrasoundDepthWidget);
+  Q_DECLARE_PRIVATE(qSlicerUltrasoundGainWidget);
+  Q_DISABLE_COPY(qSlicerUltrasoundGainWidget);
 };
 
 #endif
