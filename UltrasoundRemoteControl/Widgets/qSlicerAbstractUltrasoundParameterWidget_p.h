@@ -40,6 +40,8 @@ public:
   vtkSmartPointer<vtkMRMLIGTLConnectorNode> ConnectorNode;
 
   std::string ParameterName;
+  std::string ParameterUnit;
+
   std::string DeviceID = "";
   vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> CmdSetParameter;
   vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> CmdGetParameter;

@@ -18,42 +18,57 @@
 
 ==============================================================================*/
 
-#ifndef __qSlicerUltrasoundDynamicRangeWidget_h
-#define __qSlicerUltrasoundDynamicRangeWidget_h
+#ifndef __qSlicerUltrasoundDoubleParameterSlider_h
+#define __qSlicerUltrasoundDoubleParameterSlider_h
 
 // UltrasoundRemoteControl includes
 #include "qSlicerUltrasoundRemoteControlModuleWidgetsExport.h"
 
 #include "qSlicerAbstractUltrasoundParameterWidget.h"
 
-class qSlicerUltrasoundDynamicRangeWidgetPrivate;
+// ctk includes
+#include <ctkSliderWidget.h>
+
+class qSlicerUltrasoundDoubleParameterSliderPrivate;
 class vtkMRMLIGTLConnectorNode; 
 
 /// \ingroup Slicer_QtModules_UltrasoundRemoteControl
-class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDynamicRangeWidget : public qSlicerAbstractUltrasoundParameterWidget
+class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDoubleParameterSlider : public qSlicerAbstractUltrasoundParameterWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
+  Q_PROPERTY(double minimum READ minimum WRITE setMinimum)
+  Q_PROPERTY(double maximum READ maximum WRITE setMaximum)
+
 public:
   typedef qSlicerAbstractUltrasoundParameterWidget Superclass;
-  explicit qSlicerUltrasoundDynamicRangeWidget(QWidget *parent = 0);
-  virtual ~qSlicerUltrasoundDynamicRangeWidget();
+  explicit qSlicerUltrasoundDoubleParameterSlider(QWidget *parent = 0);
+  virtual ~qSlicerUltrasoundDoubleParameterSlider();
 
 public slots:
-  double getDynamicRangeDb();
-  void setDynamicRangeDb(double dynamicRange);
+
+  virtual double minimum();
+  virtual void setMinimum(double minimum);
+  
+  virtual double maximum();
+  virtual void setMaximum(double maximum);
 
   virtual void onConnected();
   virtual void onDisconnected();
+
+protected slots:
+
+  virtual void setUltrasoundParameterCompleted();
+  virtual void getUltrasoundParameterCompleted();
 
 protected:
 
   virtual std::string getParameterValue();
 
 private:
-  Q_DECLARE_PRIVATE(qSlicerUltrasoundDynamicRangeWidget);
-  Q_DISABLE_COPY(qSlicerUltrasoundDynamicRangeWidget);
+  Q_DECLARE_PRIVATE(qSlicerUltrasoundDoubleParameterSlider);
+  Q_DISABLE_COPY(qSlicerUltrasoundDoubleParameterSlider);
 };
 
 #endif

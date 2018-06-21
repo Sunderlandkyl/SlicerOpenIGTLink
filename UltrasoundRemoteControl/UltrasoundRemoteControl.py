@@ -63,25 +63,37 @@ class UltrasoundRemoteControlWidget(ScriptedLoadableModuleWidget):
     self.layout.addWidget(ultrasoundParametersCollapsibleButton)
     ultrasoundParametersLayout = qt.QFormLayout(ultrasoundParametersCollapsibleButton)
     
-    self.depthWidget = slicer.qSlicerUltrasoundDepthWidget()
-    ultrasoundParametersLayout.addWidget(self.depthWidget)
+    self.depthSlider = slicer.qSlicerUltrasoundDoubleParameterSlider()
+    self.depthSlider.setParameterName("DepthMm")
+    self.depthSlider.setMinimum(10.0)
+    self.depthSlider.setMaximum(150.0)
+    ultrasoundParametersLayout.addRow("Depth (mm):",  self.depthSlider)
     
-    self.gainWidget = slicer.qSlicerUltrasoundGainWidget()
-    ultrasoundParametersLayout.addWidget(self.gainWidget)
+    self.gainSlider = slicer.qSlicerUltrasoundDoubleParameterSlider()
+    self.gainSlider.setParameterName("GainPercent")
+    self.gainSlider.setMinimum(0.0)
+    self.gainSlider.setMaximum(100.0)
+    ultrasoundParametersLayout.addRow("Gain (%):", self.gainSlider)
 
-    self.frequencyWidget = slicer.qSlicerUltrasoundFrequencyWidget()
-    ultrasoundParametersLayout.addWidget(self.frequencyWidget)
+    self.frequencySlider = slicer.qSlicerUltrasoundDoubleParameterSlider()
+    self.frequencySlider.setParameterName("FrequencyMhz")
+    self.frequencySlider.setMinimum(2.0)
+    self.frequencySlider.setMaximum(5.0)
+    ultrasoundParametersLayout.addRow("Frequency (MHz):", self.frequencySlider)
 
-    self.dunamicRangeWidget = slicer.qSlicerUltrasoundDynamicRangeWidget()
-    ultrasoundParametersLayout.addWidget(self.dunamicRangeWidget)
+    self.dynamicRangeSlider = slicer.qSlicerUltrasoundDoubleParameterSlider()
+    self.dynamicRangeSlider.setParameterName("DynRangeDb")
+    self.dynamicRangeSlider.setMinimum(10.0)
+    self.dynamicRangeSlider.setMaximum(100.0)
+    ultrasoundParametersLayout.addRow("Dynamic Range (dB):", self.dynamicRangeSlider)
     
     self.layout.addStretch(1)
     
     self.parameterWidgets = [
-    self.depthWidget,
-    self.gainWidget,
-    self.frequencyWidget,
-    self.dunamicRangeWidget,
+    self.depthSlider,
+    self.gainSlider,
+    self.frequencySlider,
+    self.dynamicRangeSlider,
     ]
     
     self.connectorNodeSelector.connect("nodeActivated(vtkMRMLNode*)", self.onConnectorNodeSelected)

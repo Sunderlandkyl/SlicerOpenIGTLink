@@ -32,6 +32,7 @@ const std::string PLUS_SERVER_LAUNCHER_REMOTE_DEVICE_ID = "US_Remote";
 qSlicerAbstractUltrasoundParameterWidgetPrivate::qSlicerAbstractUltrasoundParameterWidgetPrivate(qSlicerAbstractUltrasoundParameterWidget *q)
   : q_ptr(q)
   , ParameterName("")
+  , ParameterUnit("")
   , CmdSetParameter(vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New())
   , CmdGetParameter(vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New())
   , ConnectorNode(NULL)
@@ -124,7 +125,6 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
   }
 
   std::string parameterValue = this->getParameterValue();
-
   vtkNew<vtkXMLDataElement> rootElement;
   rootElement->SetName("Command");
   rootElement->SetAttribute("Name", "SetUsParameter");
@@ -141,3 +141,45 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
   d->CmdSetParameter->SetCommandText(ss.str());
   d->ConnectorNode->SendCommand(d->CmdSetParameter);
 }
+
+//-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::getUltrasoundParameter()
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+}
+
+//-----------------------------------------------------------------------------
+const char* qSlicerAbstractUltrasoundParameterWidget::parameterName()
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  return d->ParameterName.c_str();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::setParameterName(const char* parameterName)
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  if (parameterName)
+  {
+    d->ParameterName = parameterName;
+  }
+  else
+  {
+    d->ParameterName = "";
+  }
+  
+}
+
+////-----------------------------------------------------------------------------
+//std::string qSlicerAbstractUltrasoundParameterWidget::parameterUnit()
+//{
+//  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+//  return d->ParameterUnit;
+//}
+//
+////-----------------------------------------------------------------------------
+//void qSlicerAbstractUltrasoundParameterWidget::setParameterUnit(std::string unit)
+//{
+//  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+//  d->ParameterUnit = unit;
+//}
