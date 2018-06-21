@@ -64,7 +64,11 @@ protected slots:
 
 protected:
 
-  virtual std::string getParameterValue();
+  virtual std::string getExpectedParameterValue();
+  virtual void setExpectedParameterValue(std::string);
+
+  virtual std::string getActualParameterValue();
+  virtual void setActualParameterValue(std::string);
 
 private:
   Q_DECLARE_PRIVATE(qSlicerUltrasoundDoubleParameterSlider);

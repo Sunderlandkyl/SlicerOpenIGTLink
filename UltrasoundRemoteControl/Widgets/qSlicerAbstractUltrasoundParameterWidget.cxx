@@ -82,6 +82,7 @@ void qSlicerAbstractUltrasoundParameterWidget::setConnectorNode(vtkMRMLIGTLConne
   this->qvtkReconnect(d->ConnectorNode, node, vtkCommand::ModifiedEvent, this, SLOT(onConnectionChanged()));
   this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::ConnectedEvent, this, SLOT(onConnectionChanged()));
   this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::DisconnectedEvent, this, SLOT(onConnectionChanged()));
+  this->qvtkReconnect(d->CmdSetParameter, node, vtkMRMLIGTLConnectorNode::DisconnectedEvent, this, SLOT(onSetParameterCompleted()));
   d->ConnectorNode = node;
   this->onConnectionChanged();
 }
@@ -124,7 +125,7 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
     return;
   }
 
-  std::string parameterValue = this->getParameterValue();
+  std::string expectedParameterValue = this->getExpectedParameterValue();
   vtkNew<vtkXMLDataElement> rootElement;
   rootElement->SetName("Command");
   rootElement->SetAttribute("Name", "SetUsParameter");
@@ -132,9 +133,9 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
   vtkNew<vtkXMLDataElement> nestedElement;
   nestedElement->SetName("Parameter");
   nestedElement->SetAttribute("Name", d->ParameterName.c_str());
-  nestedElement->SetAttribute("Value", parameterValue.c_str());
+  nestedElement->SetAttribute("Value", expectedParameterValue.c_str());
   rootElement->AddNestedElement(nestedElement);
-  
+
   std::stringstream ss;
   vtkXMLUtilities::FlattenElement(rootElement, ss);
   
@@ -167,19 +168,20 @@ void qSlicerAbstractUltrasoundParameterWidget::setParameterName(const char* para
   {
     d->ParameterName = "";
   }
-  
 }
 
-////-----------------------------------------------------------------------------
-//std::string qSlicerAbstractUltrasoundParameterWidget::parameterUnit()
-//{
-//  Q_D(qSlicerAbstractUltrasoundParameterWidget);
-//  return d->ParameterUnit;
-//}
-//
-////-----------------------------------------------------------------------------
-//void qSlicerAbstractUltrasoundParameterWidget::setParameterUnit(std::string unit)
-//{
-//  Q_D(qSlicerAbstractUltrasoundParameterWidget);
-//  d->ParameterUnit = unit;
-//}
+//-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameterCompleted()
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+
+  //d->CmdSetParameter->GetResponseAttribute()
+  std::cout << d->CmdSetParameter->GetResponseText() << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::getUltrasoundParameterCompleted()
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+
+}

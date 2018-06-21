@@ -59,7 +59,7 @@ protected:
 
 public:
   QHBoxLayout *horizontalLayout;
-  ctkSliderWidget *slider;
+  ctkSliderWidget *expectedValueSlider;
   ctkDoubleSpinBox *actualValueSpinBox;
 };
 
@@ -83,7 +83,7 @@ void qSlicerUltrasoundDoubleParameterSliderPrivate::init()
   qSlicerAbstractUltrasoundParameterWidgetPrivate::init();
 
   this->setupUi(q);
-  QObject::connect(this->slider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
+  QObject::connect(this->expectedValueSlider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
 }
 
 //-----------------------------------------------------------------------------
@@ -105,10 +105,10 @@ void qSlicerUltrasoundDoubleParameterSliderPrivate::setupUi(QWidget *qSlicerUltr
   horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
   horizontalLayout->setSizeConstraint(QLayout::SetMinimumSize);
   
-  this->slider = new ctkSliderWidget(qSlicerUltrasoundDoubleParameterSlider);
-  this->slider->setObjectName(QStringLiteral("slider"));
-  this->slider->setTracking(false);
-  horizontalLayout->addWidget(this->slider);
+  this->expectedValueSlider = new ctkSliderWidget(qSlicerUltrasoundDoubleParameterSlider);
+  this->expectedValueSlider->setObjectName(QStringLiteral("slider"));
+  this->expectedValueSlider->setTracking(false);
+  horizontalLayout->addWidget(this->expectedValueSlider);
 
   QLabel* actualValueLabel = new QLabel(qSlicerUltrasoundDoubleParameterSlider);
   actualValueLabel->setObjectName(QStringLiteral("actualValueLabel"));
@@ -120,8 +120,6 @@ void qSlicerUltrasoundDoubleParameterSliderPrivate::setupUi(QWidget *qSlicerUltr
   this->actualValueSpinBox->spinBox()->setButtonSymbols(QAbstractSpinBox::ButtonSymbols::NoButtons);
   this->actualValueSpinBox->lineEdit()->setReadOnly(true);
   horizontalLayout->addWidget(this->actualValueSpinBox);
-
-  QMetaObject::connectSlotsByName(qSlicerUltrasoundDoubleParameterSlider);
 }
 
 //-----------------------------------------------------------------------------
@@ -146,21 +144,58 @@ qSlicerUltrasoundDoubleParameterSlider::~qSlicerUltrasoundDoubleParameterSlider(
 void qSlicerUltrasoundDoubleParameterSlider::onConnected()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  d->slider->setEnabled(true);
+  d->expectedValueSlider->setEnabled(true);
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerUltrasoundDoubleParameterSlider::onDisconnected()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  d->slider->setDisabled(true);
+  d->expectedValueSlider->setDisabled(true);
 }
 
 //-----------------------------------------------------------------------------
-std::string qSlicerUltrasoundDoubleParameterSlider::getParameterValue()
+std::string qSlicerUltrasoundDoubleParameterSlider::getExpectedParameterValue()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  return vtkVariant(d->slider->value()).ToString();
+  return vtkVariant(d->expectedValueSlider->value()).ToString();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerUltrasoundDoubleParameterSlider::setExpectedParameterValue(std::string expectedParameterString)
+{
+  Q_D(qSlicerUltrasoundDoubleParameterSlider);
+
+  bool wasBlocking = d->expectedValueSlider->blockSignals(true);
+  bool valid = false;
+  double value = vtkVariant(expectedParameterString).ToDouble(&valid);
+  if (valid)
+  {
+    d->expectedValueSlider->setValue(value);
+  }
+  d->expectedValueSlider->blockSignals(wasBlocking);
+}
+
+//-----------------------------------------------------------------------------
+std::string qSlicerUltrasoundDoubleParameterSlider::getActualParameterValue()
+{
+  Q_D(qSlicerUltrasoundDoubleParameterSlider);
+  return vtkVariant(d->actualValueSpinBox->value()).ToString();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerUltrasoundDoubleParameterSlider::setActualParameterValue(std::string actualParameterString)
+{
+  Q_D(qSlicerUltrasoundDoubleParameterSlider);
+
+  bool wasBlocking = d->actualValueSpinBox->blockSignals(true);
+  bool valid = false;
+  double value = vtkVariant(actualParameterString).ToDouble(&valid);
+  if (valid)
+  {
+    d->actualValueSpinBox->setValue(value);
+  }
+  d->actualValueSpinBox->blockSignals(wasBlocking);
 }
 
 //-----------------------------------------------------------------------------
@@ -177,26 +212,26 @@ void qSlicerUltrasoundDoubleParameterSlider::setUltrasoundParameterCompleted()
 double qSlicerUltrasoundDoubleParameterSlider::minimum()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  return d->slider->minimum();
+  return d->expectedValueSlider->minimum();
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerUltrasoundDoubleParameterSlider::setMinimum(double minimum)
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  d->slider->setMinimum(minimum);
+  d->expectedValueSlider->setMinimum(minimum);
 }
 
 //-----------------------------------------------------------------------------
 double qSlicerUltrasoundDoubleParameterSlider::maximum()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  return d->slider->maximum();
+  return d->expectedValueSlider->maximum();
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerUltrasoundDoubleParameterSlider::setMaximum(double maximum)
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  d->slider->setMaximum(maximum);
+  d->expectedValueSlider->setMaximum(maximum);
 }
