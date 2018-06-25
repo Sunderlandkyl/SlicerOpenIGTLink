@@ -46,7 +46,7 @@ class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerAbstractUltr
   Q_OBJECT
   QVTK_OBJECT
 
-  Q_PROPERTY(std::string  parameterName READ parameterName WRITE setParameterName)
+  Q_PROPERTY(const char*  parameterName READ parameterName WRITE setParameterName)
 
 public:
   typedef qMRMLWidget Superclass;

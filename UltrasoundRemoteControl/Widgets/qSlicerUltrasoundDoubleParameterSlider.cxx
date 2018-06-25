@@ -23,7 +23,6 @@
 #include "qSlicerAbstractUltrasoundParameterWidget.h"
 #include "qSlicerAbstractUltrasoundParameterWidget_p.h"
 
-#include "vtkSlicerOpenIGTLinkCommand.h"
 #include "vtkMRMLIGTLConnectorNode.h"
 
 // VTK includes

@@ -21,9 +21,11 @@
 #include "qSlicerAbstractUltrasoundParameterWidget.h"
 #include "qSlicerAbstractUltrasoundParameterWidget_p.h"
 
-#include "vtkSlicerOpenIGTLinkCommand.h"
+// OpenIGTLinkIO includes
+#include <igtlioCommand.h>
 
 // VTK includes
+#include <vtkXMLDataElement.h>
 #include <vtkXMLUtilities.h>
 
 const std::string PLUS_SERVER_LAUNCHER_REMOTE_DEVICE_ID = "US_Remote";
@@ -33,8 +35,8 @@ qSlicerAbstractUltrasoundParameterWidgetPrivate::qSlicerAbstractUltrasoundParame
   : q_ptr(q)
   , ParameterName("")
   , ParameterUnit("")
-  , CmdSetParameter(vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New())
-  , CmdGetParameter(vtkSmartPointer<vtkSlicerOpenIGTLinkCommand>::New())
+  , CmdSetParameter(igtlioCommandPointer::New())
+  , CmdGetParameter(igtlioCommandPointer::New())
   , ConnectorNode(NULL)
 {
 }
@@ -43,10 +45,10 @@ qSlicerAbstractUltrasoundParameterWidgetPrivate::qSlicerAbstractUltrasoundParame
 void qSlicerAbstractUltrasoundParameterWidgetPrivate::init()
 {
   Q_Q(qSlicerAbstractUltrasoundParameterWidget);
-  this->CmdSetParameter->SetCommandName("SetUsParameter");
-  this->CmdSetParameter->SetDeviceID(PLUS_SERVER_LAUNCHER_REMOTE_DEVICE_ID);
+  this->CmdSetParameter->SetName("SetUsParameter");
   this->CmdSetParameter->BlockingOff();
-  this->CmdSetParameter->SetCommandTimeoutSec(1.0);
+  this->CmdSetParameter->SetTimeoutSec(1.0);
+
 }
 
 //-----------------------------------------------------------------------------
@@ -139,7 +141,7 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
   std::stringstream ss;
   vtkXMLUtilities::FlattenElement(rootElement, ss);
   
-  d->CmdSetParameter->SetCommandText(ss.str());
+  d->CmdSetParameter->SetCommandContent(ss.str());
   d->ConnectorNode->SendCommand(d->CmdSetParameter);
 }
 
@@ -176,7 +178,7 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameterCompleted()
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
 
   //d->CmdSetParameter->GetResponseAttribute()
-  std::cout << d->CmdSetParameter->GetResponseText() << std::endl;
+  std::cout << d->CmdSetParameter->GetResponseContent() << std::endl;
 }
 
 //-----------------------------------------------------------------------------

@@ -21,7 +21,7 @@
 #ifndef __qSlicerAbstractUltrasoundParameterWidget_p_h
 #define __qSlicerAbstractUltrasoundParameterWidget_p_h
 
-#include <vtkSetGet.h>
+#include <QTimer>
 
 //-----------------------------------------------------------------------------
 class qSlicerAbstractUltrasoundParameterWidgetPrivate
@@ -39,13 +39,14 @@ protected:
 public:
   vtkSmartPointer<vtkMRMLIGTLConnectorNode> ConnectorNode;
 
-  std::string ParameterName;
-  std::string ParameterUnit;
+  std::string           ParameterName;
+  std::string           ParameterUnit;
 
-  std::string DeviceID = "";
-  vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> CmdSetParameter;
-  vtkSmartPointer<vtkSlicerOpenIGTLinkCommand> CmdGetParameter;
+  std::string           DeviceID = "";
+  igtlioCommandPointer  CmdSetParameter;
+  igtlioCommandPointer  CmdGetParameter;
 
+  QTimer                PeriodicParameterTimer;
 };
 
 #endif
