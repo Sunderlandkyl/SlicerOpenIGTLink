@@ -198,16 +198,6 @@ void qSlicerUltrasoundDoubleParameterSlider::setActualParameterValue(std::string
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDoubleParameterSlider::getUltrasoundParameterCompleted()
-{
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerUltrasoundDoubleParameterSlider::setUltrasoundParameterCompleted()
-{
-}
-
-//-----------------------------------------------------------------------------
 double qSlicerUltrasoundDoubleParameterSlider::minimum()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
@@ -218,7 +208,15 @@ double qSlicerUltrasoundDoubleParameterSlider::minimum()
 void qSlicerUltrasoundDoubleParameterSlider::setMinimum(double minimum)
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
+  double maximum = this->maximum();
+  if (minimum > maximum)
+  {
+    return;
+  }
+
   d->expectedValueSlider->setMinimum(minimum);
+  d->actualValueSpinBox->setMinimum(minimum);
+  d->expectedValueSlider->setSingleStep((maximum - minimum) / 100.0);
 }
 
 //-----------------------------------------------------------------------------
@@ -232,5 +230,14 @@ double qSlicerUltrasoundDoubleParameterSlider::maximum()
 void qSlicerUltrasoundDoubleParameterSlider::setMaximum(double maximum)
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
+  double minimum = this->minimum();
+  if (minimum > maximum)
+  {
+    return;
+  }
+
   d->expectedValueSlider->setMaximum(maximum);
+  d->actualValueSpinBox->setMaximum(maximum);
+  d->expectedValueSlider->setSingleStep((maximum - minimum) / 100.0);
+
 }

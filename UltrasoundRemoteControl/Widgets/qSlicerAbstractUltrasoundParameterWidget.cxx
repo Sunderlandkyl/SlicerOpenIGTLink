@@ -28,8 +28,6 @@
 #include <vtkXMLDataElement.h>
 #include <vtkXMLUtilities.h>
 
-const std::string PLUS_SERVER_LAUNCHER_REMOTE_DEVICE_ID = "US_Remote";
-
 //-----------------------------------------------------------------------------
 qSlicerAbstractUltrasoundParameterWidgetPrivate::qSlicerAbstractUltrasoundParameterWidgetPrivate(qSlicerAbstractUltrasoundParameterWidget *q)
   : q_ptr(q)
@@ -49,19 +47,18 @@ void qSlicerAbstractUltrasoundParameterWidgetPrivate::init()
   this->CmdSetParameter->BlockingOff();
   this->CmdSetParameter->SetTimeoutSec(1.0);
 
-}
-
-//-----------------------------------------------------------------------------
-qSlicerAbstractUltrasoundParameterWidget::qSlicerAbstractUltrasoundParameterWidget(QWidget* parentWidget)
-  : qMRMLWidget(parentWidget)
-  , d_ptr(new qSlicerAbstractUltrasoundParameterWidgetPrivate(this))
-{
+  this->CmdGetParameter->SetName("GetUsParameter");
+  this->CmdGetParameter->BlockingOff();
+  this->CmdGetParameter->SetTimeoutSec(1.0);
 }
 
 //-----------------------------------------------------------------------------
 qSlicerAbstractUltrasoundParameterWidget::qSlicerAbstractUltrasoundParameterWidget(qSlicerAbstractUltrasoundParameterWidgetPrivate* d)
   : d_ptr(d)
 {
+  connect(&d->PeriodicParameterTimer, SIGNAL(timeout()), this, SLOT(checkActualValue()));
+  this->qvtkConnect(d->CmdSetParameter, igtlioCommand::CommandCompletedEvent, this, SLOT(onSetUltrasoundParameterCompleted()));
+  this->qvtkConnect(d->CmdGetParameter, igtlioCommand::CommandCompletedEvent, this, SLOT(onGetUltrasoundParameterCompleted()));
 }
 
 //-----------------------------------------------------------------------------
@@ -84,7 +81,7 @@ void qSlicerAbstractUltrasoundParameterWidget::setConnectorNode(vtkMRMLIGTLConne
   this->qvtkReconnect(d->ConnectorNode, node, vtkCommand::ModifiedEvent, this, SLOT(onConnectionChanged()));
   this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::ConnectedEvent, this, SLOT(onConnectionChanged()));
   this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::DisconnectedEvent, this, SLOT(onConnectionChanged()));
-  this->qvtkReconnect(d->CmdSetParameter, node, vtkMRMLIGTLConnectorNode::DisconnectedEvent, this, SLOT(onSetParameterCompleted()));
+  
   d->ConnectorNode = node;
   this->onConnectionChanged();
 }
@@ -96,6 +93,7 @@ void qSlicerAbstractUltrasoundParameterWidget::onConnectionChanged()
   if (d->ConnectorNode && d->ConnectorNode->GetState() == vtkMRMLIGTLConnectorNode::StateConnected)
   {
     this->onConnected();
+    this->getUltrasoundParameter();
   }
   else
   {
@@ -122,7 +120,7 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
   
-  if (!d->ConnectorNode)
+  if (!d->ConnectorNode || d->ConnectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
   {
     return;
   }
@@ -143,12 +141,35 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
   
   d->CmdSetParameter->SetCommandContent(ss.str());
   d->ConnectorNode->SendCommand(d->CmdSetParameter);
+
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerAbstractUltrasoundParameterWidget::getUltrasoundParameter()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
+
+  if (!d->ConnectorNode || d->ConnectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
+  {
+    return;
+  }
+
+  std::string expectedParameterValue = this->getExpectedParameterValue();
+  vtkNew<vtkXMLDataElement> rootElement;
+  rootElement->SetName("Command");
+  rootElement->SetAttribute("Name", "GetUsParameter");
+  rootElement->SetAttribute("UsDeviceId", "VideoDevice"); //TODO: currently hardcoded
+  vtkNew<vtkXMLDataElement> nestedElement;
+  nestedElement->SetName("Parameter");
+  nestedElement->SetAttribute("Name", d->ParameterName.c_str());
+  rootElement->AddNestedElement(nestedElement);
+
+  std::stringstream ss;
+  vtkXMLUtilities::FlattenElement(rootElement, ss);
+
+  d->CmdGetParameter->SetCommandContent(ss.str());
+  d->ConnectorNode->SendCommand(d->CmdGetParameter);
+
 }
 
 //-----------------------------------------------------------------------------
@@ -173,17 +194,44 @@ void qSlicerAbstractUltrasoundParameterWidget::setParameterName(const char* para
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameterCompleted()
+void qSlicerAbstractUltrasoundParameterWidget::onSetUltrasoundParameterCompleted()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
 
-  //d->CmdSetParameter->GetResponseAttribute()
-  std::cout << d->CmdSetParameter->GetResponseContent() << std::endl;
+  if (d->CmdSetParameter->GetSuccessful())
+  {
+    this->setActualParameterValue(this->getExpectedParameterValue());
+  }
+
+  this->setParameterCompleted();
+
+  //if (this->getActualParameterValue() != this->getExpectedParameterValue())
+  //{
+  //  d->PeriodicParameterTimer.start(2000);
+  //}
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerAbstractUltrasoundParameterWidget::getUltrasoundParameterCompleted()
+void qSlicerAbstractUltrasoundParameterWidget::onGetUltrasoundParameterCompleted()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  std::cout << d->CmdGetParameter->GetResponseContent() << std::endl;
+}
 
+//-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::checkActualValue()
+{
+  //Q_D(qSlicerAbstractUltrasoundParameterWidget);
+
+  //std::string expectedValue = this->getExpectedParameterValue();
+  //std::string actualValue = this->getActualParameterValue();
+
+  //if (expectedValue == actualValue || d->ConnectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
+  //{
+  //  d->PeriodicParameterTimer.stop();
+  //  return;
+  //}
+
+  //// Maybe should get instead?
+  //this->setUltrasoundParameter();
 }

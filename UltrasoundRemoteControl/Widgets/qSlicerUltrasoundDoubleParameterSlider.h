@@ -57,10 +57,8 @@ public slots:
   virtual void onConnected();
   virtual void onDisconnected();
 
-protected slots:
-
-  virtual void setUltrasoundParameterCompleted();
-  virtual void getUltrasoundParameterCompleted();
+  virtual void setInProgress();
+  virtual void setCompleted();
 
 protected:
 

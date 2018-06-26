@@ -48,13 +48,10 @@ class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerAbstractUltr
 
   Q_PROPERTY(const char*  parameterName READ parameterName WRITE setParameterName)
 
-public:
-  typedef qMRMLWidget Superclass;
-  qSlicerAbstractUltrasoundParameterWidget(QWidget* parent = 0);
-  virtual ~qSlicerAbstractUltrasoundParameterWidget();
-
 protected:
+  typedef qMRMLWidget Superclass;
   qSlicerAbstractUltrasoundParameterWidget(qSlicerAbstractUltrasoundParameterWidgetPrivate* d);
+  virtual ~qSlicerAbstractUltrasoundParameterWidget();
 
 public slots:
 
@@ -67,6 +64,9 @@ public slots:
   virtual void onConnectionChanged();
   virtual void onConnected() {};
   virtual void onDisconnected() {};
+
+  virtual void setParameterInProgress() {};
+  virtual void setParameterCompleted() {};
 
   virtual void setUltrasoundParameter();
   virtual void getUltrasoundParameter();
@@ -86,8 +86,9 @@ protected:
 
 protected slots:
 
-  virtual void setUltrasoundParameterCompleted();
-  virtual void getUltrasoundParameterCompleted();
+  virtual void onSetUltrasoundParameterCompleted();
+  virtual void onGetUltrasoundParameterCompleted();
+  virtual void checkActualValue();
 
 private:
   Q_DECLARE_PRIVATE(qSlicerAbstractUltrasoundParameterWidget);
