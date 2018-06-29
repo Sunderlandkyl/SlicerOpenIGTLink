@@ -56,7 +56,7 @@ void qSlicerAbstractUltrasoundParameterWidgetPrivate::init()
 qSlicerAbstractUltrasoundParameterWidget::qSlicerAbstractUltrasoundParameterWidget(qSlicerAbstractUltrasoundParameterWidgetPrivate* d)
   : d_ptr(d)
 {
-  connect(&d->PeriodicParameterTimer, SIGNAL(timeout()), this, SLOT(checkActualValue()));
+  connect(&d->PeriodicParameterTimer, SIGNAL(timeout()), this, SLOT(getUltrasoundParameter()));
   this->qvtkConnect(d->CmdSetParameter, igtlioCommand::CommandCompletedEvent, this, SLOT(onSetUltrasoundParameterCompleted()));
   this->qvtkConnect(d->CmdGetParameter, igtlioCommand::CommandCompletedEvent, this, SLOT(onGetUltrasoundParameterCompleted()));
 }
@@ -78,7 +78,6 @@ void qSlicerAbstractUltrasoundParameterWidget::setConnectorNode(vtkMRMLIGTLConne
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
 
-  this->qvtkReconnect(d->ConnectorNode, node, vtkCommand::ModifiedEvent, this, SLOT(onConnectionChanged()));
   this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::ConnectedEvent, this, SLOT(onConnectionChanged()));
   this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::DisconnectedEvent, this, SLOT(onConnectionChanged()));
   
@@ -94,25 +93,27 @@ void qSlicerAbstractUltrasoundParameterWidget::onConnectionChanged()
   {
     this->onConnected();
     this->getUltrasoundParameter();
+    d->PeriodicParameterTimer.start(2000);
   }
   else
   {
+    d->PeriodicParameterTimer.stop();
     this->onDisconnected();
   }
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerAbstractUltrasoundParameterWidget::setDeviceID(std::string deviceID)
+void qSlicerAbstractUltrasoundParameterWidget::setDeviceID(const char* deviceID)
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
-  d->DeviceID = deviceID;
+  d->DeviceID = deviceID ? deviceID : "";
 }
 
 //-----------------------------------------------------------------------------
-std::string qSlicerAbstractUltrasoundParameterWidget::getDeviceID()
+const char* qSlicerAbstractUltrasoundParameterWidget::deviceID()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
-  return d->DeviceID;
+  return d->DeviceID.c_str();
 }
 
 //-----------------------------------------------------------------------------
@@ -125,7 +126,7 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
     return;
   }
 
-  std::string expectedParameterValue = this->getExpectedParameterValue();
+  std::string value = this->getParameterValue();
   vtkNew<vtkXMLDataElement> rootElement;
   rootElement->SetName("Command");
   rootElement->SetAttribute("Name", "SetUsParameter");
@@ -133,13 +134,16 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
   vtkNew<vtkXMLDataElement> nestedElement;
   nestedElement->SetName("Parameter");
   nestedElement->SetAttribute("Name", d->ParameterName.c_str());
-  nestedElement->SetAttribute("Value", expectedParameterValue.c_str());
+  nestedElement->SetAttribute("Value", value.c_str());
   rootElement->AddNestedElement(nestedElement);
 
   std::stringstream ss;
   vtkXMLUtilities::FlattenElement(rootElement, ss);
   
   d->CmdSetParameter->SetCommandContent(ss.str());
+  d->CmdSetParameter->SetResponseContent("");
+  d->CmdSetParameter->ClearResponseMetaData();
+  d->ConnectorNode->CancelCommand(d->CmdSetParameter);
   d->ConnectorNode->SendCommand(d->CmdSetParameter);
 
 }
@@ -154,11 +158,10 @@ void qSlicerAbstractUltrasoundParameterWidget::getUltrasoundParameter()
     return;
   }
 
-  std::string expectedParameterValue = this->getExpectedParameterValue();
   vtkNew<vtkXMLDataElement> rootElement;
   rootElement->SetName("Command");
   rootElement->SetAttribute("Name", "GetUsParameter");
-  rootElement->SetAttribute("UsDeviceId", "VideoDevice"); //TODO: currently hardcoded
+  rootElement->SetAttribute("UsDeviceId", d->DeviceID.c_str());
   vtkNew<vtkXMLDataElement> nestedElement;
   nestedElement->SetName("Parameter");
   nestedElement->SetAttribute("Name", d->ParameterName.c_str());
@@ -168,6 +171,9 @@ void qSlicerAbstractUltrasoundParameterWidget::getUltrasoundParameter()
   vtkXMLUtilities::FlattenElement(rootElement, ss);
 
   d->CmdGetParameter->SetCommandContent(ss.str());
+  d->CmdGetParameter->SetResponseContent("");
+  d->CmdGetParameter->ClearResponseMetaData();
+  d->ConnectorNode->CancelCommand(d->CmdGetParameter);
   d->ConnectorNode->SendCommand(d->CmdGetParameter);
 
 }
@@ -198,40 +204,36 @@ void qSlicerAbstractUltrasoundParameterWidget::onSetUltrasoundParameterCompleted
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
 
-  if (d->CmdSetParameter->GetSuccessful())
-  {
-    this->setActualParameterValue(this->getExpectedParameterValue());
-  }
-
   this->setParameterCompleted();
 
-  //if (this->getActualParameterValue() != this->getExpectedParameterValue())
-  //{
-  //  d->PeriodicParameterTimer.start(2000);
-  //}
+  if (d->CmdSetParameter->GetSuccessful())
+  {
+    this->getUltrasoundParameter();
+  }
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerAbstractUltrasoundParameterWidget::onGetUltrasoundParameterCompleted()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
-  std::cout << d->CmdGetParameter->GetResponseContent() << std::endl;
+  
+  if (!d->CmdGetParameter->GetSuccessful())
+  {
+    return;
+  }
+
+  std::string value = "";
+  IANA_ENCODING_TYPE encoding;
+  if (d->CmdGetParameter->GetResponseMetaDataElement(d->ParameterName, value, encoding))
+  {
+    if (!value.empty())
+    {
+      this->setParameterValue(value);
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerAbstractUltrasoundParameterWidget::checkActualValue()
 {
-  //Q_D(qSlicerAbstractUltrasoundParameterWidget);
-
-  //std::string expectedValue = this->getExpectedParameterValue();
-  //std::string actualValue = this->getActualParameterValue();
-
-  //if (expectedValue == actualValue || d->ConnectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
-  //{
-  //  d->PeriodicParameterTimer.stop();
-  //  return;
-  //}
-
-  //// Maybe should get instead?
-  //this->setUltrasoundParameter();
 }

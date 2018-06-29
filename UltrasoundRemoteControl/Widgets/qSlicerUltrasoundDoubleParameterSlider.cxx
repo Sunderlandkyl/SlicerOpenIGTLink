@@ -58,8 +58,7 @@ protected:
 
 public:
   QHBoxLayout *horizontalLayout;
-  ctkSliderWidget *expectedValueSlider;
-  ctkDoubleSpinBox *actualValueSpinBox;
+  ctkSliderWidget *valueSlider;
 };
 
 //-----------------------------------------------------------------------------
@@ -82,7 +81,7 @@ void qSlicerUltrasoundDoubleParameterSliderPrivate::init()
   qSlicerAbstractUltrasoundParameterWidgetPrivate::init();
 
   this->setupUi(q);
-  QObject::connect(this->expectedValueSlider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
+  QObject::connect(this->valueSlider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
 }
 
 //-----------------------------------------------------------------------------
@@ -104,21 +103,10 @@ void qSlicerUltrasoundDoubleParameterSliderPrivate::setupUi(QWidget *qSlicerUltr
   horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
   horizontalLayout->setSizeConstraint(QLayout::SetMinimumSize);
   
-  this->expectedValueSlider = new ctkSliderWidget(qSlicerUltrasoundDoubleParameterSlider);
-  this->expectedValueSlider->setObjectName(QStringLiteral("slider"));
-  this->expectedValueSlider->setTracking(false);
-  horizontalLayout->addWidget(this->expectedValueSlider);
-
-  QLabel* actualValueLabel = new QLabel(qSlicerUltrasoundDoubleParameterSlider);
-  actualValueLabel->setObjectName(QStringLiteral("actualValueLabel"));
-  actualValueLabel->setText("   Current value:");
-  horizontalLayout->addWidget(actualValueLabel);
-  
-  this->actualValueSpinBox = new ctkDoubleSpinBox(qSlicerUltrasoundDoubleParameterSlider);
-  this->actualValueSpinBox->spinBox()->setReadOnly(true);
-  this->actualValueSpinBox->spinBox()->setButtonSymbols(QAbstractSpinBox::ButtonSymbols::NoButtons);
-  this->actualValueSpinBox->lineEdit()->setReadOnly(true);
-  horizontalLayout->addWidget(this->actualValueSpinBox);
+  this->valueSlider = new ctkSliderWidget(qSlicerUltrasoundDoubleParameterSlider);
+  this->valueSlider->setObjectName(QStringLiteral("slider"));
+  this->valueSlider->setTracking(false);
+  horizontalLayout->addWidget(this->valueSlider);
 }
 
 //-----------------------------------------------------------------------------
@@ -143,65 +131,43 @@ qSlicerUltrasoundDoubleParameterSlider::~qSlicerUltrasoundDoubleParameterSlider(
 void qSlicerUltrasoundDoubleParameterSlider::onConnected()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  d->expectedValueSlider->setEnabled(true);
+  d->valueSlider->setEnabled(true);
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerUltrasoundDoubleParameterSlider::onDisconnected()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  d->expectedValueSlider->setDisabled(true);
+  d->valueSlider->setDisabled(true);
 }
 
 //-----------------------------------------------------------------------------
-std::string qSlicerUltrasoundDoubleParameterSlider::getExpectedParameterValue()
+std::string qSlicerUltrasoundDoubleParameterSlider::getParameterValue()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  return vtkVariant(d->expectedValueSlider->value()).ToString();
+  return vtkVariant(d->valueSlider->value()).ToString();
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerUltrasoundDoubleParameterSlider::setExpectedParameterValue(std::string expectedParameterString)
+void qSlicerUltrasoundDoubleParameterSlider::setParameterValue(std::string expectedParameterString)
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
 
-  bool wasBlocking = d->expectedValueSlider->blockSignals(true);
+  bool wasBlocking = d->valueSlider->blockSignals(true);
   bool valid = false;
   double value = vtkVariant(expectedParameterString).ToDouble(&valid);
   if (valid)
   {
-    d->expectedValueSlider->setValue(value);
+    d->valueSlider->setValue(value);
   }
-  d->expectedValueSlider->blockSignals(wasBlocking);
-}
-
-//-----------------------------------------------------------------------------
-std::string qSlicerUltrasoundDoubleParameterSlider::getActualParameterValue()
-{
-  Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  return vtkVariant(d->actualValueSpinBox->value()).ToString();
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerUltrasoundDoubleParameterSlider::setActualParameterValue(std::string actualParameterString)
-{
-  Q_D(qSlicerUltrasoundDoubleParameterSlider);
-
-  bool wasBlocking = d->actualValueSpinBox->blockSignals(true);
-  bool valid = false;
-  double value = vtkVariant(actualParameterString).ToDouble(&valid);
-  if (valid)
-  {
-    d->actualValueSpinBox->setValue(value);
-  }
-  d->actualValueSpinBox->blockSignals(wasBlocking);
+  d->valueSlider->blockSignals(wasBlocking);
 }
 
 //-----------------------------------------------------------------------------
 double qSlicerUltrasoundDoubleParameterSlider::minimum()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  return d->expectedValueSlider->minimum();
+  return d->valueSlider->minimum();
 }
 
 //-----------------------------------------------------------------------------
@@ -214,16 +180,15 @@ void qSlicerUltrasoundDoubleParameterSlider::setMinimum(double minimum)
     return;
   }
 
-  d->expectedValueSlider->setMinimum(minimum);
-  d->actualValueSpinBox->setMinimum(minimum);
-  d->expectedValueSlider->setSingleStep((maximum - minimum) / 100.0);
+  d->valueSlider->setMinimum(minimum);
+  d->valueSlider->setSingleStep((maximum - minimum) / 100.0);
 }
 
 //-----------------------------------------------------------------------------
 double qSlicerUltrasoundDoubleParameterSlider::maximum()
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  return d->expectedValueSlider->maximum();
+  return d->valueSlider->maximum();
 }
 
 //-----------------------------------------------------------------------------
@@ -236,8 +201,7 @@ void qSlicerUltrasoundDoubleParameterSlider::setMaximum(double maximum)
     return;
   }
 
-  d->expectedValueSlider->setMaximum(maximum);
-  d->actualValueSpinBox->setMaximum(maximum);
-  d->expectedValueSlider->setSingleStep((maximum - minimum) / 100.0);
+  d->valueSlider->setMaximum(maximum);
+  d->valueSlider->setSingleStep((maximum - minimum) / 100.0);
 
 }

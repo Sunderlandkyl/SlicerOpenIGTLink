@@ -47,6 +47,7 @@ class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerAbstractUltr
   QVTK_OBJECT
 
   Q_PROPERTY(const char*  parameterName READ parameterName WRITE setParameterName)
+  Q_PROPERTY(const char* deviceID READ deviceID WRITE setDeviceID)
 
 protected:
   typedef qMRMLWidget Superclass;
@@ -58,6 +59,9 @@ public slots:
   const char* parameterName();
   void setParameterName(const char* name);
 
+  const char* deviceID();
+  void setDeviceID(const char* deviceID);
+  
   vtkMRMLIGTLConnectorNode* getConnectorNode();
   void setConnectorNode(vtkMRMLIGTLConnectorNode* connectorNode);
 
@@ -71,16 +75,10 @@ public slots:
   virtual void setUltrasoundParameter();
   virtual void getUltrasoundParameter();
 
-  void setDeviceID(std::string deviceID);
-  std::string getDeviceID();
-
 protected:
 
-  virtual std::string getExpectedParameterValue() { return ""; };
-  virtual void setExpectedParameterValue(std::string value) {};
-
-  virtual std::string getActualParameterValue() { return ""; };
-  virtual void setActualParameterValue(std::string value) {};
+  virtual std::string getParameterValue() { return ""; };
+  virtual void setParameterValue(std::string value) {};
 
   QScopedPointer<qSlicerAbstractUltrasoundParameterWidgetPrivate> d_ptr;
 

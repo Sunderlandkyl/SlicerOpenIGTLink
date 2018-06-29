@@ -57,16 +57,13 @@ public slots:
   virtual void onConnected();
   virtual void onDisconnected();
 
-  virtual void setInProgress();
-  virtual void setCompleted();
+  //virtual void setInProgress();
+  //virtual void setParameterCompleted();
 
 protected:
 
-  virtual std::string getExpectedParameterValue();
-  virtual void setExpectedParameterValue(std::string);
-
-  virtual std::string getActualParameterValue();
-  virtual void setActualParameterValue(std::string);
+  virtual std::string getParameterValue();
+  virtual void setParameterValue(std::string);
 
 private:
   Q_DECLARE_PRIVATE(qSlicerUltrasoundDoubleParameterSlider);

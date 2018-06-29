@@ -54,6 +54,7 @@ class UltrasoundRemoteControlWidget(ScriptedLoadableModuleWidget):
     plusParametersLayout.addRow("Connector node:", self.connectorNodeSelector)
     
     self.deviceIDLineEdit = qt.QLineEdit()
+    self.deviceIDLineEdit.setText("VideoDevice")
     plusParametersLayout.addRow("Device ID:", self.deviceIDLineEdit)
 
     # Ultrasound parameters
@@ -62,7 +63,7 @@ class UltrasoundRemoteControlWidget(ScriptedLoadableModuleWidget):
     ultrasoundParametersCollapsibleButton.collapsed = False
     self.layout.addWidget(ultrasoundParametersCollapsibleButton)
     ultrasoundParametersLayout = qt.QFormLayout(ultrasoundParametersCollapsibleButton)
-    
+
     self.depthSlider = slicer.qSlicerUltrasoundDoubleParameterSlider()
     self.depthSlider.setParameterName("DepthMm")
     self.depthSlider.setMinimum(10.0)
@@ -97,13 +98,22 @@ class UltrasoundRemoteControlWidget(ScriptedLoadableModuleWidget):
     ]
     
     self.connectorNodeSelector.connect("nodeActivated(vtkMRMLNode*)", self.onConnectorNodeSelected)
-
+    self.connectorNodeSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onConnectorNodeSelected)
+    self.deviceIDLineEdit.connect("editingFinished()", self.onDeviceIdChanged())
+    
+    self.onConnectorNodeSelected(self.connectorNodeSelector.currentNode())
+    
   def onReload(self):
     pass
   
   def onConnectorNodeSelected(self, connectorNode):
     for widget in self.parameterWidgets:
       widget.setConnectorNode(connectorNode)
+
+  def onDeviceIdChanged(self):
+    deviceID = self.deviceIDLineEdit.text
+    for widget in self.parameterWidgets:
+      widget.setDeviceID(deviceID)
 
 #
 # UltrasoundRemoteControlLogic
