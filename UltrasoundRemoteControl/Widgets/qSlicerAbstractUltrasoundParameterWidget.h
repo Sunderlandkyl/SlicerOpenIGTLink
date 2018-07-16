@@ -55,13 +55,12 @@ protected:
   virtual ~qSlicerAbstractUltrasoundParameterWidget();
 
 public slots:
-
   const char* parameterName();
   void setParameterName(const char* name);
 
   const char* deviceID();
   void setDeviceID(const char* deviceID);
-  
+
   vtkMRMLIGTLConnectorNode* getConnectorNode();
   void setConnectorNode(vtkMRMLIGTLConnectorNode* connectorNode);
 
@@ -75,6 +74,11 @@ public slots:
   virtual void setUltrasoundParameter();
   virtual void getUltrasoundParameter();
 
+  void setInteractionInProgress(bool);
+  void interactionInProgressOn() { this->setInteractionInProgress(true); };
+  void interactionInProgressOff() { this->setInteractionInProgress(false); };
+  bool getInteractionInProgress();
+
 protected:
 
   virtual std::string getParameterValue() { return ""; };
@@ -86,7 +90,6 @@ protected slots:
 
   virtual void onSetUltrasoundParameterCompleted();
   virtual void onGetUltrasoundParameterCompleted();
-  virtual void checkActualValue();
 
 private:
   Q_DECLARE_PRIVATE(qSlicerAbstractUltrasoundParameterWidget);

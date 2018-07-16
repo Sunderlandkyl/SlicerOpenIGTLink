@@ -28,6 +28,9 @@
 #include <sstream>
 
 // VTK include
+#include <vtkStringArray.h>
+
+// vtksys includes
 #include <vtksys/SystemTools.hxx>
 
 //------------------------------------------------------------------------------
@@ -44,6 +47,9 @@ vtkMRMLPlusRemoteNode::vtkMRMLPlusRemoteNode()
 
   , VolumeReconstructorIDs()
   , CurrentVolumeReconstructorID("")
+
+  , DeviceIDType("")
+  , CurrentDeviceID("")
 
   , RecordingStatus(PLUS_REMOTE_IDLE)
   , RecordingFilename("Recording.mha")
@@ -144,6 +150,20 @@ void vtkMRMLPlusRemoteNode::SetAndObserveOpenIGTLinkConnectorNode(vtkMRMLIGTLCon
 vtkMRMLIGTLConnectorNode* vtkMRMLPlusRemoteNode::GetOpenIGTLinkConnectorNode()
 {
   return vtkMRMLIGTLConnectorNode::SafeDownCast(this->GetNodeReference(CONNECTOR_REFERENCE_ROLE));
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLPlusRemoteNode::GetDeviceIDs(vtkStringArray* stringArray)
+{
+  if (!stringArray)
+  {
+    return;
+  }
+
+  for (std::vector<std::string>::iterator deviceIDIt = this->DeviceIDs.begin(); deviceIDIt != this->DeviceIDs.end(); ++deviceIDIt)
+  {
+    stringArray->InsertNextValue((*deviceIDIt).c_str());
+  }
 }
 
 //----------------------------------------------------------------------------

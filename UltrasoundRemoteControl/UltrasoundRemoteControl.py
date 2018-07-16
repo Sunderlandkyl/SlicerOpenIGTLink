@@ -29,17 +29,7 @@ class UltrasoundRemoteControlWidget(ScriptedLoadableModuleWidget):
     # Instantiate and connect widgets
     ScriptedLoadableModuleWidget.setup(self)
 
-    # Module requires openigtlinkremote
-    try:
-      slicer.modules.openigtlinkremote
-    except:
-      self.errorLabel = qt.QLabel("Could not find OpenIGTLink Remote module")
-      self.layout.addWidget(self.errorLabel)
-      return
-
-    # Plus remote launcher
-
-    #self.plusServerLauncher = 
+    self.connectorNodeObserverTagList = []
 
     # Plus parameters
     plusParametersCollapsibleButton = ctk.ctkCollapsibleButton()
@@ -52,10 +42,9 @@ class UltrasoundRemoteControlWidget(ScriptedLoadableModuleWidget):
     self.connectorNodeSelector.nodeTypes = ( ("vtkMRMLIGTLConnectorNode"), "" )
     self.connectorNodeSelector.setMRMLScene(slicer.mrmlScene)
     plusParametersLayout.addRow("Connector node:", self.connectorNodeSelector)
-    
-    self.deviceIDLineEdit = qt.QLineEdit()
-    self.deviceIDLineEdit.setText("VideoDevice")
-    plusParametersLayout.addRow("Device ID:", self.deviceIDLineEdit)
+
+    self.deviceIDComboBox = qt.QComboBox()
+    plusParametersLayout.addRow("Device ID:", self.deviceIDComboBox)
 
     # Ultrasound parameters
     ultrasoundParametersCollapsibleButton = ctk.ctkCollapsibleButton()
@@ -68,52 +57,99 @@ class UltrasoundRemoteControlWidget(ScriptedLoadableModuleWidget):
     self.depthSlider.setParameterName("DepthMm")
     self.depthSlider.setMinimum(10.0)
     self.depthSlider.setMaximum(150.0)
+    self.depthSlider.setSingleStepSize(1.0)
     ultrasoundParametersLayout.addRow("Depth (mm):",  self.depthSlider)
-    
+
     self.gainSlider = slicer.qSlicerUltrasoundDoubleParameterSlider()
     self.gainSlider.setParameterName("GainPercent")
     self.gainSlider.setMinimum(0.0)
     self.gainSlider.setMaximum(100.0)
+    self.gainSlider.setSingleStepSize(1.0)
     ultrasoundParametersLayout.addRow("Gain (%):", self.gainSlider)
 
     self.frequencySlider = slicer.qSlicerUltrasoundDoubleParameterSlider()
     self.frequencySlider.setParameterName("FrequencyMhz")
     self.frequencySlider.setMinimum(2.0)
     self.frequencySlider.setMaximum(5.0)
+    self.frequencySlider.setSingleStepSize(0.5)
     ultrasoundParametersLayout.addRow("Frequency (MHz):", self.frequencySlider)
 
     self.dynamicRangeSlider = slicer.qSlicerUltrasoundDoubleParameterSlider()
     self.dynamicRangeSlider.setParameterName("DynRangeDb")
     self.dynamicRangeSlider.setMinimum(10.0)
     self.dynamicRangeSlider.setMaximum(100.0)
+    self.dynamicRangeSlider.setSingleStepSize(1.0)
     ultrasoundParametersLayout.addRow("Dynamic Range (dB):", self.dynamicRangeSlider)
-    
+
     self.layout.addStretch(1)
-    
+
     self.parameterWidgets = [
     self.depthSlider,
     self.gainSlider,
     self.frequencySlider,
     self.dynamicRangeSlider,
     ]
-    
+
     self.connectorNodeSelector.connect("nodeActivated(vtkMRMLNode*)", self.onConnectorNodeSelected)
     self.connectorNodeSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onConnectorNodeSelected)
-    self.deviceIDLineEdit.connect("editingFinished()", self.onDeviceIdChanged())
-    
+    self.deviceIDComboBox.connect("currentIndexChanged(int)", self.onDeviceIdChanged)
+
+    self.plusRemoteNode = slicer.mrmlScene.GetFirstNodeByClass('vtkMRMLPlusRemoteNode')
+    if self.plusRemoteNode is None:
+      self.plusRemoteNode = slicer.vtkMRMLPlusRemoteNode()
+      self.plusRemoteNode.SetName("PlusRemoteNode")
+      slicer.mrmlScene.AddNode(self.plusRemoteNode)
+    self.plusRemoteNode.AddObserver(slicer.vtkMRMLPlusRemoteNode.DeviceIdsReceivedEvent, self.getDeviceCommandCompleted)
+
     self.onConnectorNodeSelected(self.connectorNodeSelector.currentNode())
-    
+
   def onReload(self):
     pass
-  
+
+  def getDeviceCommandCompleted(self, object=None, event=None, caller=None):
+    wasBlocked = self.deviceIDComboBox.blockSignals(True)
+    self.deviceIDComboBox.clear()
+    deviceIDs = vtk.vtkStringArray()
+    self.plusRemoteNode.GetDeviceIDs(deviceIDs)
+    currentDeviceID = self.plusRemoteNode.GetCurrentDeviceID()
+
+    for valueIndex in range(deviceIDs.GetNumberOfValues()):
+      deviceID = deviceIDs.GetValue(valueIndex)
+      self.deviceIDComboBox.addItem(deviceID)
+
+    currentIndex = self.deviceIDComboBox.findText(currentDeviceID)
+    self.deviceIDComboBox.setCurrentIndex(currentIndex)
+    self.deviceIDComboBox.blockSignals(wasBlocked)
+    self.onDeviceIdChanged()
+
   def onConnectorNodeSelected(self, connectorNode):
+    for obj, tag in self.connectorNodeObserverTagList:
+      obj.RemoveObserver(tag)
+    self.connectorNodeObserverTagList = []
+
+    # Add observers for connect/disconnect events
+    if connectorNode is not None:
+      events = [[slicer.vtkMRMLIGTLConnectorNode.ConnectedEvent, self.onConnectorNodeConnectionChanged], [slicer.vtkMRMLIGTLConnectorNode.DisconnectedEvent, self.onConnectorNodeConnectionChanged]]
+      for tagEventHandler in events:
+        connectorNodeObserverTag = connectorNode.AddObserver(tagEventHandler[0], tagEventHandler[1])
+        self.connectorNodeObserverTagList.append((connectorNode, connectorNodeObserverTag))
+
+    self.plusRemoteNode.SetAndObserveOpenIGTLinkConnectorNode(connectorNode)
     for widget in self.parameterWidgets:
       widget.setConnectorNode(connectorNode)
+    self.onConnectorNodeConnectionChanged()
+
+  def onConnectorNodeConnectionChanged(self, object=None, event=None, caller=None):
+    connectorNode = self.connectorNodeSelector.currentNode()
+    if (connectorNode is not None and connectorNode.GetState() == slicer.vtkMRMLIGTLConnectorNode.StateConnected):
+      self.plusRemoteNode.SetDeviceIDType("")
+      slicer.modules.plusremote.logic().GetDeviceIDs(self.plusRemoteNode)
 
   def onDeviceIdChanged(self):
-    deviceID = self.deviceIDLineEdit.text
+    currentDeviceID = self.deviceIDComboBox.currentText
+    self.plusRemoteNode.SetCurrentDeviceID(currentDeviceID)
     for widget in self.parameterWidgets:
-      widget.setDeviceID(deviceID)
+      widget.setDeviceID(currentDeviceID)
 
 #
 # UltrasoundRemoteControlLogic

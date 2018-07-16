@@ -79,6 +79,8 @@ public:
   void GetCaptureDeviceIDs(vtkMRMLPlusRemoteNode*);
   /// Send a command to get the list of volume reconstructor devices from the Plus
   void GetVolumeReconstructorDeviceIDs(vtkMRMLPlusRemoteNode*);
+  /// Send a command to get a list of device ids from Plus
+  void GetDeviceIDs(vtkMRMLPlusRemoteNode*);
 
   /// Sends a command to Plus to start recording with the specified parameters
   void StartRecording(vtkMRMLPlusRemoteNode*);
@@ -134,6 +136,7 @@ protected:
   // Callback functions for when commands are received
   static void onGetCaptureDeviceCommandResponseReceived(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);
   static void onGetVolumeReconstructorDeviceCommandResponseReceived(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);
+  static void onGetDeviceCommandResponseReceived(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);
 
   static void onRecordingStarted(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);
   static void onRecordingCompleted(vtkObject* caller, unsigned long eid, void* clientdata, void *calldata);

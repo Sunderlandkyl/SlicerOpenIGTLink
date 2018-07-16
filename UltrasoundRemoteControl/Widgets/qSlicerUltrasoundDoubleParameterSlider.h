@@ -30,7 +30,7 @@
 #include <ctkSliderWidget.h>
 
 class qSlicerUltrasoundDoubleParameterSliderPrivate;
-class vtkMRMLIGTLConnectorNode; 
+class vtkMRMLIGTLConnectorNode;
 
 /// \ingroup Slicer_QtModules_UltrasoundRemoteControl
 class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDoubleParameterSlider : public qSlicerAbstractUltrasoundParameterWidget
@@ -40,6 +40,7 @@ class Q_SLICER_MODULE_ULTRASOUNDREMOTECONTROL_WIDGETS_EXPORT qSlicerUltrasoundDo
 
   Q_PROPERTY(double minimum READ minimum WRITE setMinimum)
   Q_PROPERTY(double maximum READ maximum WRITE setMaximum)
+  Q_PROPERTY(double singleStepSize READ singleStepSize WRITE setSingleStepSize)
 
 public:
   typedef qSlicerAbstractUltrasoundParameterWidget Superclass;
@@ -50,15 +51,15 @@ public slots:
 
   virtual double minimum();
   virtual void setMinimum(double minimum);
-  
+
   virtual double maximum();
   virtual void setMaximum(double maximum);
 
+  virtual double singleStepSize();
+  virtual void setSingleStepSize(double stepSize);
+
   virtual void onConnected();
   virtual void onDisconnected();
-
-  //virtual void setInProgress();
-  //virtual void setParameterCompleted();
 
 protected:
 

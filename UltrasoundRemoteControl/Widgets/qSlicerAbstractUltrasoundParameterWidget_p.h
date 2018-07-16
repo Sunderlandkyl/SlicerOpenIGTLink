@@ -46,6 +46,8 @@ public:
   igtlioCommandPointer  CmdSetParameter;
   igtlioCommandPointer  CmdGetParameter;
 
+  bool                  InteractionInProgress;
+
   QTimer                PeriodicParameterTimer;
 };
 

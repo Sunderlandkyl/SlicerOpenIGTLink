@@ -36,7 +36,8 @@
 #include <QLineEdit>
 #include <QSpinBox>
 
-// ctk includes
+// CTK includes
+#include <ctkDoubleSlider.h>
 #include <ctkDoubleSpinBox.h>
 #include <ctkSliderWidget.h>
 
@@ -82,6 +83,11 @@ void qSlicerUltrasoundDoubleParameterSliderPrivate::init()
 
   this->setupUi(q);
   QObject::connect(this->valueSlider, SIGNAL(valueChanged(double)), q, SLOT(setUltrasoundParameter()));
+
+  QObject::connect(this->valueSlider->slider(), SIGNAL(sliderPressed()), q, SLOT(interactionInProgressOn()));
+  QObject::connect(this->valueSlider->slider(), SIGNAL(sliderReleased()), q, SLOT(interactionInProgressOff()));
+  
+  
 }
 
 //-----------------------------------------------------------------------------
@@ -92,7 +98,6 @@ void qSlicerUltrasoundDoubleParameterSliderPrivate::setupUi(QWidget *qSlicerUltr
     qSlicerUltrasoundDoubleParameterSlider->setObjectName(QStringLiteral("qSlicerUltrasoundDoubleParameterSlider"));
   }
 
-  qSlicerUltrasoundDoubleParameterSlider->resize(388, 44);
   QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
   sizePolicy.setHorizontalStretch(0);
   sizePolicy.setVerticalStretch(0);
@@ -102,9 +107,9 @@ void qSlicerUltrasoundDoubleParameterSliderPrivate::setupUi(QWidget *qSlicerUltr
   horizontalLayout = new QHBoxLayout(qSlicerUltrasoundDoubleParameterSlider);
   horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
   horizontalLayout->setSizeConstraint(QLayout::SetMinimumSize);
-  
+
   this->valueSlider = new ctkSliderWidget(qSlicerUltrasoundDoubleParameterSlider);
-  this->valueSlider->setObjectName(QStringLiteral("slider"));
+  this->valueSlider->setObjectName(QStringLiteral("doubleParameterSlider"));
   this->valueSlider->setTracking(false);
   horizontalLayout->addWidget(this->valueSlider);
 }
@@ -174,14 +179,7 @@ double qSlicerUltrasoundDoubleParameterSlider::minimum()
 void qSlicerUltrasoundDoubleParameterSlider::setMinimum(double minimum)
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  double maximum = this->maximum();
-  if (minimum > maximum)
-  {
-    return;
-  }
-
   d->valueSlider->setMinimum(minimum);
-  d->valueSlider->setSingleStep((maximum - minimum) / 100.0);
 }
 
 //-----------------------------------------------------------------------------
@@ -195,13 +193,23 @@ double qSlicerUltrasoundDoubleParameterSlider::maximum()
 void qSlicerUltrasoundDoubleParameterSlider::setMaximum(double maximum)
 {
   Q_D(qSlicerUltrasoundDoubleParameterSlider);
-  double minimum = this->minimum();
-  if (minimum > maximum)
-  {
-    return;
-  }
 
   d->valueSlider->setMaximum(maximum);
-  d->valueSlider->setSingleStep((maximum - minimum) / 100.0);
+}
 
+//-----------------------------------------------------------------------------
+double qSlicerUltrasoundDoubleParameterSlider::singleStepSize()
+{
+  Q_D(qSlicerUltrasoundDoubleParameterSlider);
+
+  return d->valueSlider->singleStep();
+}
+
+
+//-----------------------------------------------------------------------------
+void qSlicerUltrasoundDoubleParameterSlider::setSingleStepSize(double stepSize)
+{
+  Q_D(qSlicerUltrasoundDoubleParameterSlider);
+
+  d->valueSlider->setSingleStep(stepSize);
 }

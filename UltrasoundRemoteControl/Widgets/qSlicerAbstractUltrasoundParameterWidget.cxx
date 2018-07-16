@@ -32,9 +32,10 @@
 qSlicerAbstractUltrasoundParameterWidgetPrivate::qSlicerAbstractUltrasoundParameterWidgetPrivate(qSlicerAbstractUltrasoundParameterWidget *q)
   : q_ptr(q)
   , ParameterName("")
-  , ParameterUnit("")
+  , ParameterUnit("") 
   , CmdSetParameter(igtlioCommandPointer::New())
   , CmdGetParameter(igtlioCommandPointer::New())
+  , InteractionInProgress(false)
   , ConnectorNode(NULL)
 {
 }
@@ -67,6 +68,20 @@ qSlicerAbstractUltrasoundParameterWidget::~qSlicerAbstractUltrasoundParameterWid
 }
 
 //-----------------------------------------------------------------------------
+void qSlicerAbstractUltrasoundParameterWidget::setInteractionInProgress(bool interactionStatus)
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  d->InteractionInProgress = interactionStatus;
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerAbstractUltrasoundParameterWidget::getInteractionInProgress()
+{
+  Q_D(qSlicerAbstractUltrasoundParameterWidget);
+  return d->InteractionInProgress;
+}
+
+//-----------------------------------------------------------------------------
 vtkMRMLIGTLConnectorNode* qSlicerAbstractUltrasoundParameterWidget::getConnectorNode()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
@@ -80,7 +95,7 @@ void qSlicerAbstractUltrasoundParameterWidget::setConnectorNode(vtkMRMLIGTLConne
 
   this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::ConnectedEvent, this, SLOT(onConnectionChanged()));
   this->qvtkReconnect(d->ConnectorNode, node, vtkMRMLIGTLConnectorNode::DisconnectedEvent, this, SLOT(onConnectionChanged()));
-  
+
   d->ConnectorNode = node;
   this->onConnectionChanged();
 }
@@ -120,7 +135,7 @@ const char* qSlicerAbstractUltrasoundParameterWidget::deviceID()
 void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
-  
+
   if (!d->ConnectorNode || d->ConnectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
   {
     return;
@@ -139,11 +154,17 @@ void qSlicerAbstractUltrasoundParameterWidget::setUltrasoundParameter()
 
   std::stringstream ss;
   vtkXMLUtilities::FlattenElement(rootElement, ss);
-  
+
+  igtlioCommandPointer oldSetParameterCommand = d->CmdSetParameter;
+  d->CmdSetParameter = igtlioCommandPointer::New();
+  d->CmdSetParameter->SetName("SetUsParameter");
+  d->CmdSetParameter->BlockingOff();
   d->CmdSetParameter->SetCommandContent(ss.str());
   d->CmdSetParameter->SetResponseContent("");
   d->CmdSetParameter->ClearResponseMetaData();
-  d->ConnectorNode->CancelCommand(d->CmdSetParameter);
+
+  d->InteractionInProgress = true;
+  this->qvtkReconnect(oldSetParameterCommand, d->CmdSetParameter, igtlioCommand::CommandCompletedEvent, this, SLOT(onSetUltrasoundParameterCompleted()));
   d->ConnectorNode->SendCommand(d->CmdSetParameter);
 
 }
@@ -155,6 +176,12 @@ void qSlicerAbstractUltrasoundParameterWidget::getUltrasoundParameter()
 
   if (!d->ConnectorNode || d->ConnectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
   {
+    return;
+  }
+
+  if (d->CmdGetParameter->IsInProgress())
+  {
+    // Get command is already in progress
     return;
   }
 
@@ -170,10 +197,15 @@ void qSlicerAbstractUltrasoundParameterWidget::getUltrasoundParameter()
   std::stringstream ss;
   vtkXMLUtilities::FlattenElement(rootElement, ss);
 
+  igtlioCommandPointer oldGetParameterCommand = d->CmdGetParameter;
+  d->CmdGetParameter = igtlioCommandPointer::New();
+  d->CmdGetParameter->SetName("GetUsParameter");
+  d->CmdGetParameter->BlockingOff();
   d->CmdGetParameter->SetCommandContent(ss.str());
   d->CmdGetParameter->SetResponseContent("");
   d->CmdGetParameter->ClearResponseMetaData();
-  d->ConnectorNode->CancelCommand(d->CmdGetParameter);
+
+  this->qvtkReconnect(oldGetParameterCommand, d->CmdGetParameter, igtlioCommand::CommandCompletedEvent, this, SLOT(onGetUltrasoundParameterCompleted()));
   d->ConnectorNode->SendCommand(d->CmdGetParameter);
 
 }
@@ -203,22 +235,26 @@ void qSlicerAbstractUltrasoundParameterWidget::setParameterName(const char* para
 void qSlicerAbstractUltrasoundParameterWidget::onSetUltrasoundParameterCompleted()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
-
+  d->InteractionInProgress = false;
   this->setParameterCompleted();
-
-  if (d->CmdSetParameter->GetSuccessful())
-  {
-    this->getUltrasoundParameter();
-  }
+  this->getUltrasoundParameter();
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerAbstractUltrasoundParameterWidget::onGetUltrasoundParameterCompleted()
 {
   Q_D(qSlicerAbstractUltrasoundParameterWidget);
-  
+
   if (!d->CmdGetParameter->GetSuccessful())
   {
+    return;
+  }
+
+  if (d->InteractionInProgress || d->CmdSetParameter->IsInProgress())
+  {
+    // User is currently interacting with the widget or
+    // SetUSParameterCommand is currently in progress
+    // Don't update the current value
     return;
   }
 
@@ -231,9 +267,4 @@ void qSlicerAbstractUltrasoundParameterWidget::onGetUltrasoundParameterCompleted
       this->setParameterValue(value);
     }
   }
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerAbstractUltrasoundParameterWidget::checkActualValue()
-{
 }
