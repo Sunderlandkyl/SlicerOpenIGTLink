@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>383</width>
-    <height>1341</height>
+    <height>1534</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -84,7 +84,7 @@
       <string>Plus server launcher remote control</string>
      </property>
      <property name="collapsed">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0" colspan="2">

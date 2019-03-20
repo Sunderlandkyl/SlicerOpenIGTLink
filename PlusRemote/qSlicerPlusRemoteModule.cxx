@@ -38,6 +38,7 @@
 
 // Plus remote includes
 #include <vtkMRMLPlusRemoteNode.h>
+#include <vtkMRMLPlusServerLauncherNode.h>
 
 static const double UPDATE_PLUS_REMOTE_NODES_PERIOD_SEC = 0.2;
 
@@ -178,13 +179,24 @@ void qSlicerPlusRemoteModule::onNodeAddedEvent(vtkObject*, vtkObject* node)
 {
   Q_D(qSlicerPlusRemoteModule);
 
-  vtkMRMLPlusRemoteNode* plusRemoteNode = vtkMRMLPlusRemoteNode::SafeDownCast(node);
-  if (plusRemoteNode)
+  //vtkMRMLPlusRemoteNode* plusRemoteNode = vtkMRMLPlusRemoteNode::SafeDownCast(node);
+  //if (plusRemoteNode)
+  //{
+  //  // If the timer is not active
+  //  if (!d->UpdateAllPlusRemoteNodesTimer.isActive())
+  //  {
+  //    d->UpdateAllPlusRemoteNodesTimer.start(UPDATE_PLUS_REMOTE_NODES_PERIOD_SEC * 1000.0);
+  //  }
+  //}
+
+  vtkMRMLPlusServerLauncherNode* plusServerLauncherNode = vtkMRMLPlusServerLauncherNode::SafeDownCast(node);
+  if (plusServerLauncherNode)
   {
     // If the timer is not active
     if (!d->UpdateAllPlusRemoteNodesTimer.isActive())
     {
-      d->UpdateAllPlusRemoteNodesTimer.start(UPDATE_PLUS_REMOTE_NODES_PERIOD_SEC * 1000.0);
+      //d->UpdateAllPlusRemoteNodesTimer.start(UPDATE_PLUS_REMOTE_NODES_PERIOD_SEC * 1000.0);
+      d->UpdateAllPlusRemoteNodesTimer.start(1.0 * 1000.0);
     }
   }
 }
@@ -226,4 +238,6 @@ void qSlicerPlusRemoteModule::updateAllPlusRemoteNodes()
     return;
   }
   plusRemoteLogic->UpdateAllPlusRemoteNodes();
+  plusRemoteLogic->UpdateAllLaunchers();
+  plusRemoteLogic->UpdateAllServers();
 }

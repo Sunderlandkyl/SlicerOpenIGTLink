@@ -42,13 +42,19 @@
 #include "igtlioCommand.h"
 
 // For referencing own MRML node
+class vtkCollection;
 class vtkMRMLAnnotationROINode;
 class vtkMRMLDisplayableNode;
 class vtkMRMLIGTLConnectorNode;
 class vtkMRMLPlusRemoteNode;
 class vtkMRMLLinearTransformNode;
 class vtkMRMLVolumeNode;
+class vtkMRMLPlusServerLauncherNode;
+class vtkMRMLPlusServerNode;
+
 struct ParameterNodeCommands;
+struct LauncherCommands;
+struct ServerCommands;
 
 #include "vtkSlicerPlusRemoteModuleLogicExport.h"
 
@@ -68,9 +74,13 @@ protected:
   /// Register MRML Node classes to Scene. Gets called automatically when the MRMLScene is attached to this logic class.
   virtual void RegisterNodes();
 
+
+  void ProcessMRMLSceneEvents(vtkObject *caller, unsigned long event, void *callData) override;
+
   /// Initialize listening to MRML events
-  virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene);
-  virtual void OnMRMLSceneNodeAdded(vtkMRMLNode* node);
+  virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene) override;
+  virtual void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
+  virtual void OnMRMLSceneNodeAboutToBeRemoved(vtkMRMLNode* node);
 
 public:
   void CreateDefaultParameterSet();
@@ -114,6 +124,20 @@ public:
   /// Sends GetLiveVolumeReconstructionSnapshot commands to all PlusRemote nodes that are constructing live volume reconstruction with a
   /// snapshot timer > 0
   void UpdateAllPlusRemoteNodes();
+
+  void UpdateAllLaunchers();
+  void UpdateLauncher(vtkMRMLPlusServerLauncherNode* launcherNode);
+  void SendGetRunningServersCommand(vtkMRMLPlusServerLauncherNode* launcherNode);
+  void SendStartServerCommand(vtkMRMLPlusServerNode* serverNode);
+  void SendStopServerCommand(vtkMRMLPlusServerNode* serverNode);
+  void UpdateLauncherConnectorNode(vtkMRMLPlusServerLauncherNode* launcherNode);
+  vtkMRMLIGTLConnectorNode* GetOrAddConnectorNode(std::string hostname, int port, std::string baseName="");
+
+  void UpdateAllServers();
+  void UpdateServer(vtkMRMLPlusServerNode* serverNode);
+  void UpdatePlusOpenIGTLinkConnectors(vtkMRMLPlusServerNode* serverNode);
+  static void onGetRunningServersCompleted(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
+  static void onLauncherCommandReceived(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
 
   ///////////////////////
   //Static methods
@@ -167,6 +191,12 @@ protected:
 
   typedef std::map<vtkMRMLPlusRemoteNode*, ParameterNodeCommands> ParameterNodeMapType;
   ParameterNodeMapType NodeCommandMap;
+
+  typedef std::map<vtkMRMLPlusServerLauncherNode*, LauncherCommands> LauncherCommandMapType;
+  LauncherCommandMapType LauncherCommandMap;
+
+  typedef std::map<vtkMRMLPlusServerNode*, ServerCommands> ServerCommandMapType;
+  ServerCommandMapType ServerCommandMap;
 
 private:
   vtkSlicerPlusRemoteLogic(const vtkSlicerPlusRemoteLogic&); // Not implemented
