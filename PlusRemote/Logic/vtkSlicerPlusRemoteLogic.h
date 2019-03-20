@@ -42,13 +42,20 @@
 #include "igtlioCommand.h"
 
 // For referencing own MRML node
+class vtkCollection;
 class vtkMRMLAnnotationROINode;
 class vtkMRMLDisplayableNode;
 class vtkMRMLIGTLConnectorNode;
 class vtkMRMLPlusRemoteNode;
 class vtkMRMLLinearTransformNode;
 class vtkMRMLVolumeNode;
+class vtkMRMLPlusServerLauncherNode;
+class vtkMRMLPlusServerNode;
+
 struct ParameterNodeCommands;
+struct LauncherCommands;
+struct ServerCommands;
+
 
 #include "vtkSlicerPlusRemoteModuleLogicExport.h"
 
@@ -115,6 +122,18 @@ public:
   /// snapshot timer > 0
   void UpdateAllPlusRemoteNodes();
 
+  void UpdateAllLaunchers();
+  void UpdateLauncher(vtkMRMLPlusServerLauncherNode* launcherNode);
+  void SendGetRunningServersCommand(vtkMRMLPlusServerLauncherNode* launcherNode);
+  void SendStartServerCommand(vtkMRMLPlusServerNode* serverNode);
+  void SendStopServerCommand(vtkMRMLPlusServerNode* serverNode);
+  void UpdateLauncherConnectorNode(vtkMRMLPlusServerLauncherNode* launcherNode);
+
+  void UpdateAllServers();
+  void UpdateServer(vtkMRMLPlusServerNode* serverNode);
+  static void onGetRunningServersCompleted(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
+  static void onLauncherCommandReceived(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
+
   ///////////////////////
   //Static methods
 
@@ -153,7 +172,7 @@ protected:
   static void onLiveVolumeReconstructionCompleted(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
 
   static void onPrintCommandResponseRequested(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
-
+  
   ///////////////////////
   // Delayed callbacks called when the required volumes in the scene are updated, invoked when the corresponding devices are modified
   static void onOfflineVolumeReconstructedFinalize(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
@@ -167,6 +186,12 @@ protected:
 
   typedef std::map<vtkMRMLPlusRemoteNode*, ParameterNodeCommands> ParameterNodeMapType;
   ParameterNodeMapType NodeCommandMap;
+
+  typedef std::map<vtkMRMLPlusServerLauncherNode*, LauncherCommands> LauncherCommandMapType;
+  LauncherCommandMapType LauncherCommandMap;
+
+  typedef std::map<vtkMRMLPlusServerNode*, ServerCommands> ServerCommandMapType;
+  ServerCommandMapType ServerCommandMap;
 
 private:
   vtkSlicerPlusRemoteLogic(const vtkSlicerPlusRemoteLogic&); // Not implemented

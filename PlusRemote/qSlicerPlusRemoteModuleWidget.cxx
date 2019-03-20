@@ -39,7 +39,7 @@
 
 // PlusRemote includes
 #include "vtkMRMLPlusRemoteNode.h"
-#include "vtkMRMLPlusServerLauncherRemoteNode.h"
+#include "vtkMRMLPlusServerLauncherNode.h"
 #include "vtkSlicerPlusRemoteLogic.h"
 
 //-----------------------------------------------------------------------------

@@ -20,8 +20,8 @@
 
 ==============================================================================*/
 
-#ifndef __vtkMRMLPlusServerLauncherRemoteNode_h
-#define __vtkMRMLPlusServerLauncherRemoteNode_h
+#ifndef __vtkMRMLPlusServerLauncherNode_h
+#define __vtkMRMLPlusServerLauncherNode_h
 
 // MRML includes
 #include <vtkMRMLNode.h>
@@ -36,21 +36,11 @@ class vtkMRMLTextNode;
 /// \ingroup Segmentations
 /// \brief Parameter set node for the plus remote launcher widget
 ///
-class VTK_SLICER_PLUSREMOTE_MODULE_MRML_EXPORT vtkMRMLPlusServerLauncherRemoteNode : public vtkMRMLNode
+class VTK_SLICER_PLUSREMOTE_MODULE_MRML_EXPORT vtkMRMLPlusServerLauncherNode : public vtkMRMLNode
 {
-
 public:
-
-  enum ServerStatus
-  {
-    ServerOff,
-    ServerRunning,
-    ServerStarting,
-    ServerStopping,
-  };
-
-  static vtkMRMLPlusServerLauncherRemoteNode* New();
-  vtkTypeMacro(vtkMRMLPlusServerLauncherRemoteNode, vtkMRMLNode);
+  static vtkMRMLPlusServerLauncherNode* New();
+  vtkTypeMacro(vtkMRMLPlusServerLauncherNode, vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   // Standard MRML node methods
@@ -58,59 +48,49 @@ public:
   virtual void ReadXMLAttributes(const char** atts) override;
   virtual void WriteXML(ostream& of, int indent) override;
   virtual void Copy(vtkMRMLNode* node) override;
-  virtual const char* GetNodeTagName() override { return "PlusRemoteLauncher"; }
+  virtual const char* GetNodeTagName() override { return "PlusServerLauncher"; }
 
 protected:
-  vtkMRMLPlusServerLauncherRemoteNode();
-  virtual ~vtkMRMLPlusServerLauncherRemoteNode();
-  vtkMRMLPlusServerLauncherRemoteNode(const vtkMRMLPlusServerLauncherRemoteNode&);
-  void operator=(const vtkMRMLPlusServerLauncherRemoteNode&);
+  vtkMRMLPlusServerLauncherNode();
+  virtual ~vtkMRMLPlusServerLauncherNode();
+  vtkMRMLPlusServerLauncherNode(const vtkMRMLPlusServerLauncherNode&);
+  void operator=(const vtkMRMLPlusServerLauncherNode&);
 
 public:
+  static const char* CONNECTOR_REFERENCE_ROLE;
+  static const char* PLUS_SERVER_REFERENCE_ROLE;
 
-  enum
+  enum LogLevel
   {
-    LogLevelError = 1,
-    LogLevelWarning = 2,
-    LogLevelInfo = 3,
-    LogLevelDebug = 4,
-    LogLevelTrace = 5,
+    Error = 1,
+    Warning = 2,
+    Info = 3,
+    Debug = 4,
+    Trace = 5,
   };
 
-  vtkGetMacro(ServerState, int);
-  vtkSetMacro(ServerState, int);
+  vtkGetMacro(State, int);
+  vtkSetMacro(State, int);
 
-  vtkGetStringMacro(ServerLauncherHostname);
-  vtkSetStringMacro(ServerLauncherHostname);
+  vtkGetMacro(Hostname, std::string);
+  vtkSetMacro(Hostname, std::string);
 
-  void SetServerLauncherPort(int port);
-  vtkGetMacro(ServerLauncherPort, int);
+  vtkGetMacro(Port, int);
+  vtkSetMacro(Port, int);
 
   vtkGetMacro(LogLevel, int);
   vtkSetMacro(LogLevel, int);
 
-  vtkGetMacro(CurrentErrorLevel, int);
-  vtkSetMacro(CurrentErrorLevel, int);
-
   /// Get launcher connector node
-  vtkMRMLIGTLConnectorNode* GetLauncherConnectorNode();
+  vtkMRMLIGTLConnectorNode* GetConnectorNode();
   /// Set and observe launcher connector node
-  void SetAndObserveLauncherConnectorNode(vtkMRMLIGTLConnectorNode* node);
-
-  /// Get current config file node
-  vtkMRMLTextNode* GetCurrentConfigNode();
-  /// Set and observe current config file node
-  void SetAndObserveCurrentConfigNode(vtkMRMLTextNode* node);
+  void SetAndObserveConnectorNode(vtkMRMLIGTLConnectorNode* node);
 
 private:
-  int ServerLauncherState;
-  int ServerState;
-  char* ServerLauncherHostname;
-  int ServerLauncherPort;
+  int State;
+  std::string Hostname;
+  int Port;
   int LogLevel;
-  int CurrentErrorLevel;
-
-  static const int DefaultPort = 18904;
 };
 
-#endif // __vtkMRMLPlusServerLauncherRemoteNode_h
+#endif // __vtkMRMLPlusServerLauncherNode_h

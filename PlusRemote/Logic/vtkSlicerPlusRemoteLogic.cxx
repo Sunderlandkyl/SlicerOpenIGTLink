@@ -21,7 +21,8 @@
 // PlusRemote includes
 #include "vtkSlicerPlusRemoteLogic.h"
 #include "vtkMRMLPlusRemoteNode.h"
-#include "vtkMRMLPlusServerLauncherRemoteNode.h"
+#include "vtkMRMLPlusServerLauncherNode.h"
+#include "vtkMRMLPlusServerNode.h"
 
 // VTK includes
 #include <vtkCallbackCommand.h>
@@ -43,9 +44,10 @@
 // MRML includes
 #include <vtkMRMLAnnotationROINode.h>
 #include <vtkMRMLDisplayNode.h>
+#include <vtkMRMLLinearTransformNode.h>
+#include <vtkMRMLNode.h>
 #include <vtkMRMLSliceCompositeNode.h>
 #include <vtkMRMLSliceLogic.h>
-#include <vtkMRMLLinearTransformNode.h>
 #include <vtkMRMLVolumeNode.h>
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
 
@@ -203,7 +205,8 @@ void vtkSlicerPlusRemoteLogic::RegisterNodes()
   }
 
   this->GetMRMLScene()->RegisterNodeClass(vtkSmartPointer<vtkMRMLPlusRemoteNode>::New());
-  this->GetMRMLScene()->RegisterNodeClass(vtkSmartPointer<vtkMRMLPlusServerLauncherRemoteNode>::New());
+  this->GetMRMLScene()->RegisterNodeClass(vtkSmartPointer<vtkMRMLPlusServerNode>::New());
+  this->GetMRMLScene()->RegisterNodeClass(vtkSmartPointer<vtkMRMLPlusServerLauncherNode>::New());
 }
 
 //---------------------------------------------------------------------------
@@ -221,6 +224,15 @@ void vtkSlicerPlusRemoteLogic::OnMRMLSceneNodeAdded(vtkMRMLNode* node)
   {
     return;
   }
+
+  vtkMRMLPlusServerLauncherNode* plusServerLauncherNode = vtkMRMLPlusServerLauncherNode::SafeDownCast(node);
+  if (!plusServerLauncherNode)
+  {
+    return;
+  }
+
+  //TODO: Add observers?
+
 }
 
 //----------------------------------------------------------------------------
@@ -1645,6 +1657,434 @@ void vtkSlicerPlusRemoteLogic::UpdateAllPlusRemoteNodes()
     if (timeElapsed > plusRemoteNode->GetLiveReconstructionSnapshotsIntervalSec())
     {
       this->GetLiveVolumeReconstructionSnapshot(plusRemoteNode);
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+class vtkPlusServerLauncherCallbackCommand : public vtkCallbackCommand
+{
+public:
+  static vtkPlusServerLauncherCallbackCommand* New()
+  {
+    return new vtkPlusServerLauncherCallbackCommand;
+  }
+
+  ///
+  vtkWeakPointer<vtkSlicerPlusRemoteLogic> Logic;
+  vtkWeakPointer<vtkMRMLPlusServerLauncherNode> LauncherNode;
+
+};
+
+//---------------------------------------------------------------------------
+struct LauncherCommandCallback
+{
+  igtlioCommandPointer Command;
+  vtkSmartPointer<vtkPlusServerLauncherCallbackCommand> Callback;
+  LauncherCommandCallback()
+    : Command(igtlioCommandPointer::New())
+    , Callback(vtkSmartPointer<vtkPlusServerLauncherCallbackCommand>::New())
+  {
+    this->Command->AddObserver(igtlioCommand::CommandCompletedEvent, this->Callback);
+    this->Callback->SetClientData(this->Callback.GetPointer());
+  }
+};
+
+//---------------------------------------------------------------------------
+struct LauncherCommands
+{
+  double CommandTimeoutSec;
+  bool CommandBlocking;
+  LauncherCommandCallback GetRunningServers;
+  vtkNew<vtkCallbackCommand> CommandReceivedCallback;
+  LauncherCommands()
+    : GetRunningServers(LauncherCommandCallback())
+  {
+    this->GetRunningServers.Command->SetTimeoutSec(0.9);
+    this->GetRunningServers.Command->SetName("GetRunningServers");
+    this->GetRunningServers.Command->SetBlocking(false);
+    this->GetRunningServers.Callback->SetCallback(vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted);
+    this->CommandReceivedCallback->SetCallback(vtkSlicerPlusRemoteLogic::onLauncherCommandReceived);
+  }
+};
+
+//----------------------------------------------------------------------------
+class vtkPlusServerCallbackCommand : public vtkCallbackCommand
+{
+public:
+  static vtkPlusServerCallbackCommand* New()
+  {
+    return new vtkPlusServerCallbackCommand;
+  }
+
+  ///
+  vtkWeakPointer<vtkMRMLPlusServerNode> ServerNode;
+  vtkWeakPointer<vtkSlicerPlusRemoteLogic> Logic;
+
+};
+
+//---------------------------------------------------------------------------
+struct ServerCommandCallback
+{
+  igtlioCommandPointer Command;
+  vtkSmartPointer<vtkPlusServerCallbackCommand> Callback;
+  ServerCommandCallback()
+    : Command(igtlioCommandPointer::New())
+    , Callback(vtkSmartPointer<vtkPlusServerCallbackCommand>::New())
+  {
+    this->Command->AddObserver(igtlioCommand::CommandCompletedEvent, this->Callback);
+    this->Callback->SetClientData(this->Callback.GetPointer());
+  }
+};
+
+//---------------------------------------------------------------------------
+struct ServerCommands
+{
+  double CommandTimeoutSec;
+  bool CommandBlocking;
+  ServerCommandCallback StartServer;
+  ServerCommandCallback StopServer;
+  vtkNew<vtkCallbackCommand> CommandReceivedCallback;
+  ServerCommands()
+    : StartServer(ServerCommandCallback())
+  {
+    this->StartServer.Command->SetTimeoutSec(0.9);
+    this->StartServer.Command->SetName("StartServer");
+    this->StartServer.Command->SetBlocking(false);
+
+    this->StopServer.Command->SetTimeoutSec(0.9);
+    this->StopServer.Command->SetName("StopServer");
+    this->StopServer.Command->SetBlocking(false);
+  }
+};
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::UpdateAllLaunchers()
+{
+  vtkMRMLScene* scene = this->GetMRMLScene();
+  if (scene == NULL)
+  {
+    return;
+  }
+
+  vtkSmartPointer<vtkCollection> launcherNodes = vtkSmartPointer<vtkCollection>::Take(scene->GetNodesByClass("vtkMRMLPlusServerLauncherNode"));
+  vtkSmartPointer<vtkCollectionIterator> launcherNodeIt = vtkSmartPointer<vtkCollectionIterator>::New();
+  launcherNodeIt->SetCollection(launcherNodes);
+  for (launcherNodeIt->InitTraversal(); !launcherNodeIt->IsDoneWithTraversal(); launcherNodeIt->GoToNextItem())
+  {
+    vtkMRMLPlusServerLauncherNode* launcherNode = vtkMRMLPlusServerLauncherNode::SafeDownCast(launcherNodeIt->GetCurrentObject());
+    if (!launcherNode)
+    {
+      continue;
+    }
+
+    this->UpdateLauncher(launcherNode);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::UpdateLauncher(vtkMRMLPlusServerLauncherNode* launcherNode)
+{
+  this->UpdateLauncherConnectorNode(launcherNode);
+  this->SendGetRunningServersCommand(launcherNode);
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::SendGetRunningServersCommand(vtkMRMLPlusServerLauncherNode* launcherNode)
+{
+  LauncherCommands* commands = &this->LauncherCommandMap[launcherNode];
+  //commands->UpdateLauncherStatus.Command->SetCommandContent(ss.str());
+  commands->GetRunningServers.Callback->Logic = this;
+  commands->GetRunningServers.Callback->LauncherNode = launcherNode;
+
+  vtkMRMLIGTLConnectorNode* connectorNode = launcherNode->GetConnectorNode();
+  if (connectorNode)
+  {
+    connectorNode->SendCommand(commands->GetRunningServers.Command);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::UpdateLauncherConnectorNode(vtkMRMLPlusServerLauncherNode* launcherNode)
+{
+  if (!launcherNode)
+  {
+    return;
+  }
+
+  std::string hostname = launcherNode->GetHostname();
+  int port = launcherNode->GetPort();
+
+  vtkMRMLIGTLConnectorNode* connectorNode = launcherNode->GetConnectorNode();
+  if (!connectorNode)
+  {
+    std::stringstream connectorNameSS;
+    if (launcherNode->GetName())
+    {
+      connectorNameSS << launcherNode->GetName();
+    }
+    else
+    {
+      connectorNameSS << "PlusServerLauncher";
+    }
+    connectorNameSS << "_Connector";
+    connectorNode = vtkMRMLIGTLConnectorNode::SafeDownCast(
+      this->GetMRMLScene()->AddNewNodeByClass("vtkMRMLIGTLConnectorNode", connectorNameSS.str()));
+    launcherNode->SetAndObserveConnectorNode(connectorNode);
+  }
+
+  if (connectorNode)
+  {
+    int modify = connectorNode->StartModify();
+    std::string connectorHostname;
+    if (connectorNode->GetServerHostname())
+    {
+      connectorHostname = connectorNode->GetServerHostname();
+    }
+
+    int connectorPort = connectorNode->GetServerPort();
+    if (connectorHostname != hostname || connectorPort != port)
+    {
+      if (connectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateOff)
+      {
+        connectorNode->Stop();
+        connectorNode->SetServerHostname(hostname);
+        connectorNode->SetServerPort(port);
+      }
+    }
+
+    if (connectorNode->GetState() == vtkMRMLIGTLConnectorNode::StateOff)
+    {
+      connectorNode->Start();
+    }
+    connectorNode->EndModify(modify);
+  }
+
+  LauncherCommands* commands = &this->LauncherCommandMap[launcherNode];
+  if (!connectorNode->HasObserver(vtkMRMLIGTLConnectorNode::CommandCompletedEvent, commands->CommandReceivedCallback))
+  {
+    commands->CommandReceivedCallback->SetClientData(launcherNode);
+    connectorNode->AddObserver(vtkMRMLIGTLConnectorNode::CommandCompletedEvent, commands->CommandReceivedCallback);
+  }
+}
+
+//---------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::onLauncherCommandReceived(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+{
+  igtlioCommand* command = static_cast<igtlioCommand*>(calldata);
+  if (!command)
+  {
+    return;
+  }
+
+  std::string commandName = command->GetName();
+  if (commandName == "ServerStarted")
+  {
+    
+  }
+  else if (commandName == "ServerStopped")
+  {
+    
+  }
+}
+
+//---------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+{
+  igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
+  if (!command)
+  {
+    return;
+  }
+
+  vtkPlusServerLauncherCallbackCommand* callback = static_cast<vtkPlusServerLauncherCallbackCommand*>(clientdata);
+  if (!callback)
+  {
+    return;
+  }
+
+  vtkSlicerPlusRemoteLogic* self = callback->Logic;
+  if (!self)
+  {
+    return;
+  }
+
+  vtkMRMLPlusServerLauncherNode* launcherNode = callback->LauncherNode;
+  if (!launcherNode)
+  {
+    return;
+  }
+
+  if (command->GetStatus() != igtlioCommandStatus::CommandResponseReceived)
+  {
+    return;
+  }
+
+  IANA_ENCODING_TYPE encoding;
+  std::string separatorString;
+  command->GetResponseMetaDataElement("Separator", separatorString, encoding);
+  std::string runningServersString;
+  command->GetResponseMetaDataElement("RunningServers", runningServersString, encoding);
+
+  std::vector<std::string> runningServers;
+  size_t pos = 0;
+  while ((pos = runningServersString.find(separatorString)) != std::string::npos)
+  {
+    std::string token = runningServersString.substr(0, pos);
+    if (!token.empty())
+    {
+      runningServers.push_back(token);
+    }
+    runningServersString.erase(0, pos + separatorString.length());
+  }
+
+  std::vector<vtkMRMLNode*> serverNodes;
+  launcherNode->GetNodeReferences(vtkMRMLPlusServerLauncherNode::PLUS_SERVER_REFERENCE_ROLE, serverNodes);
+
+  std::map<std::string, bool> serverRunning;
+  for (std::vector<vtkMRMLNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
+  {
+    vtkMRMLPlusServerNode* serverNode = vtkMRMLPlusServerNode::SafeDownCast(*serverNodeIt);
+    if (!serverNode)
+    {
+      continue;
+    }
+
+    serverRunning[serverNode->GetID()] |= false;
+    for (std::vector<std::string>::iterator runningServerIt = runningServers.begin(); runningServerIt != runningServers.end(); ++runningServerIt)
+    {
+      if (*runningServerIt != serverNode->GetConfigFileName())
+      {
+        continue;
+      }
+      serverRunning[serverNode->GetID()] = true;
+    }
+  }
+
+  for (std::vector<vtkMRMLNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
+  {
+    vtkMRMLPlusServerNode* serverNode = vtkMRMLPlusServerNode::SafeDownCast(*serverNodeIt);
+    if (!serverNode)
+    {
+      continue;
+    }
+    if (serverRunning[serverNode->GetID()])
+    {
+      serverNode->SetState(vtkMRMLPlusServerNode::ServerStatus::On);
+    }
+    else
+    {
+      serverNode->SetState(vtkMRMLPlusServerNode::ServerStatus::Off);
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::UpdateAllServers()
+{
+  vtkMRMLScene* scene = this->GetMRMLScene();
+  if (scene == NULL)
+  {
+    return;
+  }
+
+  vtkSmartPointer<vtkCollection> serverNodes = vtkSmartPointer<vtkCollection>::Take(scene->GetNodesByClass("vtkMRMLPlusServerNode"));
+  vtkSmartPointer<vtkCollectionIterator> serverNodeIt = vtkSmartPointer<vtkCollectionIterator>::New();
+  serverNodeIt->SetCollection(serverNodes);
+  for (serverNodeIt->InitTraversal(); !serverNodeIt->IsDoneWithTraversal(); serverNodeIt->GoToNextItem())
+  {
+    vtkMRMLPlusServerNode* serverNode = vtkMRMLPlusServerNode::SafeDownCast(serverNodeIt->GetCurrentObject());
+    if (!serverNode)
+    {
+      continue;
+    }
+
+    this->UpdateServer(serverNode);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::UpdateServer(vtkMRMLPlusServerNode* serverNode)
+{
+  if (!serverNode)
+  {
+    return;
+  }
+
+  if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::ServerStatus::On)
+  {
+    if (serverNode->GetState() == vtkMRMLPlusServerNode::ServerStatus::Off)
+    {
+      this->SendStartServerCommand(serverNode);
+    }
+    //else if (true) // Config file is not the same as the desired
+    //{
+    //  this->SendStopServerCommand(serverNode);
+    //}
+  }
+  else if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::ServerStatus::Off)
+  {
+    if (serverNode->GetState() == vtkMRMLPlusServerNode::ServerStatus::On)
+    {
+      this->SendStopServerCommand(serverNode);
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::SendStartServerCommand(vtkMRMLPlusServerNode* serverNode)
+{
+  vtkMRMLPlusServerLauncherNode* launcherNode = serverNode->GetLauncherNode();
+  if (!launcherNode)
+  {
+    return;
+  }
+
+  //int logLevel = d->ParameterSetNode->GetLogLevel();
+  std::stringstream startServerCommandText;
+  startServerCommandText << "<Command>" << std::endl;
+  //startServerCommandText << "  <LogLevel Value= \"" << logLevel << "\"/>" << std::endl;
+  startServerCommandText << "  <ConfigFileName Value= \"" << serverNode->GetConfigFileName() << "\"/>" << std::endl;
+  startServerCommandText << "</Command>" << std::endl;
+
+  ServerCommands* command = &this->ServerCommandMap[serverNode];
+  if (!command->StartServer.Command->IsInProgress())
+  {
+    command->StartServer.Command->SetCommandContent(startServerCommandText.str());
+    command->StartServer.Command->SetCommandMetaDataElement("ConfigFileName", serverNode->GetConfigFileName());
+    command->StartServer.Callback->ServerNode = serverNode;
+    if (launcherNode->GetConnectorNode())
+    {
+      launcherNode->GetConnectorNode()->SendCommand(command->StartServer.Command);
+      serverNode->SetState(vtkMRMLPlusServerNode::ServerStatus::Starting);
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::SendStopServerCommand(vtkMRMLPlusServerNode* serverNode)
+{
+  vtkMRMLPlusServerLauncherNode* launcherNode = serverNode->GetLauncherNode();
+  if (!launcherNode)
+  {
+    return;
+  }
+
+  //int logLevel = d->ParameterSetNode->GetLogLevel();
+  std::stringstream startServerCommandText;
+  startServerCommandText << "<Command>" << std::endl;
+  //startServerCommandText << "  <LogLevel Value= \"" << logLevel << "\"/>" << std::endl;
+  startServerCommandText << "  <ConfigFileName Value= \"" << "PlusDeviceSet_Server_Sim_3d.xml" << "\"/>" << std::endl;
+  startServerCommandText << "</Command>" << std::endl;
+
+  ServerCommands* command = &this->ServerCommandMap[serverNode];
+  if (!command->StopServer.Command->IsInProgress())
+  {
+    command->StopServer.Command->SetCommandContent(startServerCommandText.str());
+    command->StopServer.Callback->ServerNode = serverNode;
+    if (launcherNode->GetConnectorNode())
+    {
+      launcherNode->GetConnectorNode()->SendCommand(command->StopServer.Command);
     }
   }
 }

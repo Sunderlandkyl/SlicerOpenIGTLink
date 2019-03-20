@@ -32,7 +32,7 @@
 
 class qMRMLPlusServerLauncherRemoteWidgetPrivate;
 class vtkMRMLIGTLConnectorNode;
-class vtkMRMLPlusServerLauncherRemoteNode;
+class vtkMRMLPlusServerLauncherNode;
 class vtkMRMLNode;
 
 /// \ingroup Slicer_QtModules_PlusRemote
@@ -50,7 +50,7 @@ public:
   virtual ~qMRMLPlusServerLauncherRemoteWidget();
 
   /// Get the segment editor parameter set node
-  Q_INVOKABLE vtkMRMLPlusServerLauncherRemoteNode* plusRemoteLauncherNode()const;
+  Q_INVOKABLE vtkMRMLPlusServerLauncherNode* plusRemoteLauncherNode()const;
 
   /// Show/hide the log section
   bool logVisible() const;
@@ -84,7 +84,7 @@ public slots:
   virtual void subscribeToLogMessages();
 
   void setAndObserveLauncherConnectorNode(vtkMRMLIGTLConnectorNode*);
-  void setParameterSetNode(vtkMRMLPlusServerLauncherRemoteNode*);
+  void setParameterSetNode(vtkMRMLPlusServerLauncherNode*);
 
 protected:
   QScopedPointer<qMRMLPlusServerLauncherRemoteWidgetPrivate> d_ptr;
