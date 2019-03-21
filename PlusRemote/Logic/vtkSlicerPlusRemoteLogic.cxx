@@ -1830,6 +1830,8 @@ void vtkSlicerPlusRemoteLogic::UpdateLauncherConnectorNode(vtkMRMLPlusServerLaun
     connectorNameSS << "_Connector";
     connectorNode = vtkMRMLIGTLConnectorNode::SafeDownCast(
       this->GetMRMLScene()->AddNewNodeByClass("vtkMRMLIGTLConnectorNode", connectorNameSS.str()));
+    connectorNode->SetServerHostname(hostname);
+    connectorNode->SetServerPort(port);
     launcherNode->SetAndObserveConnectorNode(connectorNode);
   }
 
@@ -1974,7 +1976,10 @@ void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject* caller, u
     }
     else
     {
-      serverNode->SetState(vtkMRMLPlusServerNode::ServerStatus::Off);
+      if (serverNode->GetState() == vtkMRMLPlusServerNode::ServerStatus::On)
+      {
+        serverNode->SetState(vtkMRMLPlusServerNode::ServerStatus::Off);
+      }
     }
   }
 }
