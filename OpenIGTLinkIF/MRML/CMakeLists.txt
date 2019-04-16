@@ -8,6 +8,7 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${CMAKE_CURRENT_SOURCE_DIR}/../Logic
   ${CMAKE_CURRENT_BINARY_DIR}/../Logic
   ${OpenIGTLinkIO_INCLUDE_DIRS}
+  ${vtkSlicerMarkupsModuleMRML_BINARY_DIR}
   )
 
 set(${KIT}_SRCS
