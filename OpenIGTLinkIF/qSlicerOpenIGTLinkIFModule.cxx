@@ -18,9 +18,14 @@
 
 //-----------------------------------------------------------------------------
 #include "qSlicerCoreApplication.h"
+#include "qSlicerCoreIOManager.h"
 
-// OpenIGTLinkIF MRML includes
+// OpenIGTLink includes
+#include <igtlObjectFactoryBase.h>
+
+// OpenIGTLinkIF includes
 #include "qSlicerOpenIGTLinkIFModule.h"
+#include "qSlicerTextFileReader.h"
 #include "qSlicerOpenIGTLinkIFModuleWidget.h"
 
 // OpenIGTLinkIF Logic includes
@@ -117,6 +122,14 @@ QStringList qSlicerOpenIGTLinkIFModule::categories() const
 void qSlicerOpenIGTLinkIFModule::setup()
 {
   this->Superclass::setup();
+
+  qSlicerCoreApplication* app = qSlicerCoreApplication::application();
+  app->coreIOManager()->registerIO(new qSlicerTextFileReader(this));
+
+  // If the object factory is initialized simultaneously on multiple threads,
+  // there can be a conflict between factory initializations.
+  // This calls the initialization early
+  igtl::ObjectFactoryBase::CreateInstance("");
 }
 
 //-----------------------------------------------------------------------------

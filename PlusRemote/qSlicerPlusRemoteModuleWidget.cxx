@@ -159,7 +159,7 @@ void qSlicerPlusRemoteModuleWidget::setup()
   connect(d->ParameterNodeSelector, SIGNAL(nodeActivated(vtkMRMLNode*)), this, SLOT(onParameterSetSelected(vtkMRMLNode*)));
   connect(d->ParameterNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(onParameterSetSelected(vtkMRMLNode*)));
 
-  connect(d->OpenIGTLinkConnectorNodeSelector, SIGNAL(nodeActivated(vtkMRMLNode*)), this, SLOT(updateParameterNodeFromGui(vtkMRMLNode*)));
+  connect(d->OpenIGTLinkConnectorNodeSelector, SIGNAL(nodeActivated(vtkMRMLNode*)), this, SLOT(updateParameterNodeFromGui()));
   connect(d->OpenIGTLinkConnectorNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(updateParameterNodeFromGui()));
 
   connect(d->CaptureIDSelector, SIGNAL(currentTextChanged(QString)), this, SLOT(updateParameterNodeFromGui()));

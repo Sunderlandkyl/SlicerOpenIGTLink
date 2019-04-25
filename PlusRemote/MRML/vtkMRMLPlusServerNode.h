@@ -1,7 +1,5 @@
 /*==============================================================================
 
-  Program: 3D Slicer
-
   Copyright (c) Laboratory for Percutaneous Surgery (PerkLab)
   Queen's University, Kingston, ON, Canada. All Rights Reserved.
 
@@ -15,8 +13,8 @@
   limitations under the License.
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
-  and was supported through the Applied Cancer Research Unit program of Cancer Care
-  Ontario with funds provided by the Ontario Ministry of Health and Long-Term Care
+  and was supported through CANARIE's Research Software Program, and Cancer
+  Care Ontario.
 
 ==============================================================================*/
 
@@ -25,6 +23,9 @@
 
 // MRML includes
 #include <vtkMRMLNode.h>
+
+// vtkAddon includes  
+#include <vtkAddonSetGet.h>
 
 // PlusRemote includes
 #include "vtkSlicerPlusRemoteModuleMRMLExport.h"
@@ -50,6 +51,10 @@ public:
     Stopping,
   };
 
+  static const char* CONFIG_REFERENCE_ROLE;
+  static const char* LAUNCHER_REFERENCE_ROLE;
+  static const char* PLUS_SERVER_CONNECTOR_REFERENCE_ROLE;
+
   static vtkMRMLPlusServerNode* New();
   vtkTypeMacro(vtkMRMLPlusServerNode, vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
@@ -61,6 +66,8 @@ public:
   virtual void Copy(vtkMRMLNode* node) override;
   virtual const char* GetNodeTagName() override { return "PlusServer"; }
 
+  void ProcessMRMLEvents(vtkObject *caller, unsigned long eventID, void *callData) override;
+
 protected:
   vtkMRMLPlusServerNode();
   virtual ~vtkMRMLPlusServerNode();
@@ -69,13 +76,13 @@ protected:
 
 public:
 
-  enum LogLevel
+  enum
   {
-    Error = 1,
-    Warning = 2,
-    Info = 3,
-    Debug = 4,
-    Trace = 5,
+    LOG_ERROR = 1,
+    LOG_WARNING = 2,
+    LOG_INFO = 3,
+    LOG_DEBUG = 4,
+    LOG_TRACE = 5,
   };
 
   vtkGetMacro(DesiredState, int);
@@ -90,6 +97,12 @@ public:
   vtkGetMacro(ConfigFileName, std::string);
   vtkSetMacro(ConfigFileName, std::string);
 
+  vtkGetMacro(DeviceSetName, std::string);
+  vtkSetMacro(DeviceSetName, std::string);
+
+  vtkGetMacro(DeviceSetDescription, std::string);
+  vtkSetMacro(DeviceSetDescription, std::string);
+
   void StartServer();
   void StopServer();
 
@@ -103,11 +116,38 @@ public:
   /// Set and observe launcher node
   void SetAndObserveLauncherNode(vtkMRMLPlusServerLauncherNode* node);
 
+  void AddAndObservePlusOpenIGTLinkServerConnector(vtkMRMLIGTLConnectorNode* connectorNode);
+  std::vector<vtkMRMLIGTLConnectorNode*> GetPlusOpenIGTLinkConnectorNodes();
+
+  struct PlusOpenIGTLinkServerInfo
+  {
+    std::string OutputChannelId;
+    int ListeningPort;
+  };
+
+  struct PlusConfigFileInfo
+  {
+    std::string Name;
+    std::string Description;
+    std::vector<vtkMRMLPlusServerNode::PlusOpenIGTLinkServerInfo> Servers;
+  };
+
+  static PlusConfigFileInfo GetPlusConfigFileInfo(std::string content);
+
+  std::vector<PlusOpenIGTLinkServerInfo> GetPlusOpenIGTLinkServers() { return this->PlusOpenIGTLinkServers; };
+  void SetPlusOpenIGTLinkServers(std::vector<PlusOpenIGTLinkServerInfo> plusOpenIGTLinkServers) { this->PlusOpenIGTLinkServers = plusOpenIGTLinkServers; };
+
 protected:
+
+  void UpdateConfigFileInfo();
+
   int DesiredState;
   int State;
   int LogLevel;
   std::string ConfigFileName;
+  std::string DeviceSetName;
+  std::string DeviceSetDescription;
+  std::vector<PlusOpenIGTLinkServerInfo> PlusOpenIGTLinkServers;
 };
 
 #endif // __vtkMRMLPlusServerNode_h

@@ -1,7 +1,5 @@
 /*==============================================================================
 
-  Program: 3D Slicer
-
   Copyright (c) Laboratory for Percutaneous Surgery (PerkLab)
   Queen's University, Kingston, ON, Canada. All Rights Reserved.
 
@@ -15,10 +13,11 @@
   limitations under the License.
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
-  and was supported through the Applied Cancer Research Unit program of Cancer Care
-  Ontario with funds provided by the Ontario Ministry of Health and Long-Term Care
+  and was supported through CANARIE's Research Software Program, and Cancer
+  Care Ontario.
 
 ==============================================================================*/
+
 #include "vtkMRMLPlusServerNode.h"
 
 // PlusRemote includes
@@ -32,6 +31,8 @@
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkSmartPointer.h>
+#include <vtkXMLDataElement.h>
+#include <vtkXMLUtilities.h>
 
 // STD includes
 #include <sstream>
@@ -42,8 +43,9 @@
 #include <vtkMRMLNode.h>
 
 //------------------------------------------------------------------------------
-static const char* CONFIG_REFERENCE_ROLE = "configNodeRef";
-static const char* LAUNCHER_REFERENCE_ROLE = "launcherNodeRef";
+const char* vtkMRMLPlusServerNode::CONFIG_REFERENCE_ROLE = "configNodeRef";
+const char* vtkMRMLPlusServerNode::LAUNCHER_REFERENCE_ROLE = "launcherNodeRef";
+const char* vtkMRMLPlusServerNode::PLUS_SERVER_CONNECTOR_REFERENCE_ROLE = "plusServerConnectorNodeRef";
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLPlusServerNode);
@@ -52,7 +54,7 @@ vtkMRMLNodeNewMacro(vtkMRMLPlusServerNode);
 vtkMRMLPlusServerNode::vtkMRMLPlusServerNode()
   : DesiredState(ServerStatus::Off)
   , State(ServerStatus::Off)
-  , LogLevel(LogLevel::Info)
+  , LogLevel(LOG_INFO)
 {
 }
 
@@ -65,6 +67,11 @@ vtkMRMLPlusServerNode::~vtkMRMLPlusServerNode()
 void vtkMRMLPlusServerNode::WriteXML(ostream& of, int nIndent)
 {
   Superclass::WriteXML(of, nIndent);
+  vtkMRMLWriteXMLBeginMacro(of);
+  vtkMRMLWriteXMLIntMacro(desiredState, DesiredState);
+  vtkMRMLWriteXMLIntMacro(logLevel, LogLevel);
+  vtkMRMLWriteXMLStdStringMacro(configFileName, ConfigFileName);
+  vtkMRMLWriteXMLEndMacro();
 }
 
 //----------------------------------------------------------------------------
@@ -72,20 +79,64 @@ void vtkMRMLPlusServerNode::ReadXMLAttributes(const char** atts)
 {
   int disabledModify = this->StartModify();
   Superclass::ReadXMLAttributes(atts);
+  vtkMRMLReadXMLBeginMacro(atts);
+  vtkMRMLReadXMLIntMacro(desiredState, DesiredState);
+  vtkMRMLReadXMLIntMacro(logLevel, LogLevel);
+  vtkMRMLReadXMLStdStringMacro(configFileName, ConfigFileName);
+  vtkMRMLReadXMLEndMacro();
+  this->UpdateConfigFileInfo();
   this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLPlusServerNode::Copy(vtkMRMLNode* anode)
 {
+  int disabledModify = this->StartModify();
   Superclass::Copy(anode);
+  this->DisableModifiedEventOn();
+  vtkMRMLCopyBeginMacro(anode);
+  vtkMRMLCopyIntMacro(DesiredState);
+  vtkMRMLCopyIntMacro(LogLevel);
+  vtkMRMLCopyStdStringMacro(ConfigFileName);
+  vtkMRMLCopyEndMacro();
+  this->UpdateConfigFileInfo();
+  this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLPlusServerNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
+  vtkMRMLPrintBeginMacro(os, indent);
+  vtkMRMLPrintIntMacro(DesiredState);
+  vtkMRMLPrintIntMacro(LogLevel);
+  vtkMRMLPrintStdStringMacro(ConfigFileName);
+  vtkMRMLPrintEndMacro();
 }
+
+//----------------------------------------------------------------------------
+void vtkMRMLPlusServerNode::ProcessMRMLEvents(vtkObject *caller, unsigned long eventID, void *callData)
+{
+  Superclass::ProcessMRMLEvents(caller, eventID, callData);
+
+  if (!this->Scene)
+  {
+    vtkErrorMacro("ProcessMRMLEvents: Invalid MRML scene");
+    return;
+  }
+  if (this->Scene->IsBatchProcessing())
+  {
+    return;
+  }
+
+  if (eventID == vtkCommand::ModifiedEvent
+    && caller == this->GetConfigNode())
+  {
+    // Update the config file info
+    this->UpdateConfigFileInfo();
+  }
+}
+
 
 //----------------------------------------------------------------------------
 vtkMRMLPlusServerLauncherNode* vtkMRMLPlusServerNode::GetLauncherNode()
@@ -97,6 +148,8 @@ vtkMRMLPlusServerLauncherNode* vtkMRMLPlusServerNode::GetLauncherNode()
 void vtkMRMLPlusServerNode::SetAndObserveLauncherNode(vtkMRMLPlusServerLauncherNode* node)
 {
   this->SetNodeReferenceID(LAUNCHER_REFERENCE_ROLE, (node ? node->GetID() : NULL));
+  node->AddNodeReferenceID(vtkMRMLPlusServerLauncherNode::PLUS_SERVER_REFERENCE_ROLE, this->GetID());
+  this->Modified();
 }
 
 //----------------------------------------------------------------------------
@@ -106,9 +159,67 @@ vtkMRMLTextNode* vtkMRMLPlusServerNode::GetConfigNode()
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLPlusServerNode::SetAndObserveConfigNode(vtkMRMLTextNode* node)
+void vtkMRMLPlusServerNode::UpdateConfigFileInfo()
 {
-  this->SetNodeReferenceID(CONFIG_REFERENCE_ROLE, (node ? node->GetID() : NULL));
+  int wasModifying = this->StartModify();
+
+  vtkMRMLTextNode* configFileNode = this->GetConfigNode();
+  if (configFileNode)
+  {
+    std::stringstream ss;
+    ss << configFileNode->GetName();
+    ss << ".slicer.xml";
+    this->SetConfigFileName(ss.str());
+  }
+
+  std::string content;
+  if (configFileNode && configFileNode->GetText())
+  {
+    content = configFileNode->GetText();
+  }
+
+  vtkMRMLPlusServerNode::PlusConfigFileInfo configInfo = vtkMRMLPlusServerNode::GetPlusConfigFileInfo(content);
+  this->SetDeviceSetName(configInfo.Name);
+  this->SetDeviceSetDescription(configInfo.Description);
+  this->PlusOpenIGTLinkServers = configInfo.Servers;
+
+  this->EndModify(wasModifying);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLPlusServerNode::SetAndObserveConfigNode(vtkMRMLTextNode* configFileNode)
+{
+  this->SetNodeReferenceID(CONFIG_REFERENCE_ROLE, (configFileNode ? configFileNode->GetID() : NULL));
+
+  int wasModifying = this->StartModify();
+  this->UpdateConfigFileInfo();
+  this->Modified();
+  this->EndModify(wasModifying);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLPlusServerNode::AddAndObservePlusOpenIGTLinkServerConnector(vtkMRMLIGTLConnectorNode* connectorNode)
+{
+  this->AddNodeReferenceID(PLUS_SERVER_CONNECTOR_REFERENCE_ROLE, (connectorNode ? connectorNode->GetID() : NULL));
+}
+
+//----------------------------------------------------------------------------
+std::vector<vtkMRMLIGTLConnectorNode*> vtkMRMLPlusServerNode::GetPlusOpenIGTLinkConnectorNodes()
+{
+  std::vector<vtkMRMLIGTLConnectorNode*> connectorNodes;
+  std::vector<vtkMRMLNode*> nodes;
+  this->GetNodeReferences(vtkMRMLPlusServerNode::PLUS_SERVER_CONNECTOR_REFERENCE_ROLE, nodes);
+  for (std::vector<vtkMRMLNode*>::iterator nodeIt = nodes.begin(); nodeIt != nodes.end(); ++nodeIt)
+  {
+    vtkMRMLIGTLConnectorNode* connectorNode = vtkMRMLIGTLConnectorNode::SafeDownCast(*nodeIt);
+    if (!connectorNode)
+    {
+      continue;
+    }
+    connectorNodes.push_back(connectorNode);
+  }
+
+  return connectorNodes;
 }
 
 //----------------------------------------------------------------------------
@@ -121,4 +232,67 @@ void vtkMRMLPlusServerNode::StartServer()
 void vtkMRMLPlusServerNode::StopServer()
 {
   this->SetDesiredState(ServerStatus::Off);
+}
+
+
+//----------------------------------------------------------------------------
+vtkMRMLPlusServerNode::PlusConfigFileInfo vtkMRMLPlusServerNode::GetPlusConfigFileInfo(std::string content)
+{
+  vtkMRMLPlusServerNode::PlusConfigFileInfo configFileInfo;
+
+  vtkSmartPointer<vtkXMLDataElement> rootElement;
+  if (!content.empty())
+  {
+    rootElement = vtkSmartPointer<vtkXMLDataElement>::Take(
+      vtkXMLUtilities::ReadElementFromString(content.c_str()));
+  }
+  if (!rootElement)
+  {
+    return configFileInfo;
+  }
+
+  for (int i = 0; i < rootElement->GetNumberOfNestedElements(); ++i)
+  {
+    vtkSmartPointer<vtkXMLDataElement> nestedElement = rootElement->GetNestedElement(i);
+    std::string nestedElementName = nestedElement->GetName();
+
+    if (nestedElementName == "DataCollection")
+    {
+      vtkSmartPointer<vtkXMLDataElement> dataCollectionElement = nestedElement;
+      for (int j = 0; j < dataCollectionElement->GetNumberOfNestedElements(); ++j)
+      {
+        vtkSmartPointer<vtkXMLDataElement> nestedDataCollectionElement = dataCollectionElement->GetNestedElement(j);
+        std::string nestedDataCollectionElementName = nestedDataCollectionElement->GetName();
+        if (nestedDataCollectionElementName == "DeviceSet")
+        {
+          if (nestedDataCollectionElement->GetAttribute("Name"))
+          {
+            configFileInfo.Name = nestedDataCollectionElement->GetAttribute("Name");
+          }
+          if (nestedDataCollectionElement->GetAttribute("Description"))
+          {
+            configFileInfo.Description = nestedDataCollectionElement->GetAttribute("Description");
+          }
+        }
+      }
+    }
+
+    if (nestedElementName == "PlusOpenIGTLinkServer")
+    {
+      vtkSmartPointer<vtkXMLDataElement> plusOpenIGTLinkServerElement = nestedElement;
+
+      vtkMRMLPlusServerNode::PlusOpenIGTLinkServerInfo serverInfo;
+      serverInfo.ListeningPort = -1;
+      if (plusOpenIGTLinkServerElement->GetAttribute("ListeningPort"))
+      {
+        serverInfo.ListeningPort = vtkVariant(plusOpenIGTLinkServerElement->GetAttribute("ListeningPort")).ToInt();
+      }
+      if (plusOpenIGTLinkServerElement->GetAttribute("OutputChannelId"))
+      {
+        serverInfo.OutputChannelId = plusOpenIGTLinkServerElement->GetAttribute("OutputChannelId");
+      }
+      configFileInfo.Servers.push_back(serverInfo);
+    }
+  }
+  return configFileInfo;
 }

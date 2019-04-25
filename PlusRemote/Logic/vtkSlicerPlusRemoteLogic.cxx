@@ -13,8 +13,8 @@
   limitations under the License.
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
-  and was supported through the Applied Cancer Research Unit program of Cancer Care
-  Ontario with funds provided by the Ontario Ministry of Health and Long-Term Care
+  and was supported through CANARIE's Research Software Program, and Cancer
+  Care Ontario.
 
 ==============================================================================*/
 
@@ -48,6 +48,7 @@
 #include <vtkMRMLNode.h>
 #include <vtkMRMLSliceCompositeNode.h>
 #include <vtkMRMLSliceLogic.h>
+#include <vtkMRMLTextNode.h>
 #include <vtkMRMLVolumeNode.h>
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
 
@@ -384,7 +385,7 @@ void vtkSlicerPlusRemoteLogic::StartRecording(vtkMRMLPlusRemoteNode* parameterNo
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::StopRecording(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::StopRecording(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -416,7 +417,7 @@ void vtkSlicerPlusRemoteLogic::StopRecording(vtkMRMLPlusRemoteNode* parameterNod
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::StartOfflineReconstruction(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::StartOfflineReconstruction(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -460,7 +461,7 @@ void vtkSlicerPlusRemoteLogic::StartOfflineReconstruction(vtkMRMLPlusRemoteNode*
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::StartScoutScan(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::StartScoutScan(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -502,7 +503,7 @@ void vtkSlicerPlusRemoteLogic::StartScoutScan(vtkMRMLPlusRemoteNode* parameterNo
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::StopScoutScan(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::StopScoutScan(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -532,7 +533,7 @@ void vtkSlicerPlusRemoteLogic::StopScoutScan(vtkMRMLPlusRemoteNode* parameterNod
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::StartLiveVolumeReconstruction(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::StartLiveVolumeReconstruction(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -602,7 +603,7 @@ void vtkSlicerPlusRemoteLogic::StartLiveVolumeReconstruction(vtkMRMLPlusRemoteNo
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::GetLiveVolumeReconstructionSnapshot(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::GetLiveVolumeReconstructionSnapshot(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -638,7 +639,7 @@ void vtkSlicerPlusRemoteLogic::GetLiveVolumeReconstructionSnapshot(vtkMRMLPlusRe
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::StopLiveVolumeReconstruction(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::StopLiveVolumeReconstruction(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -671,7 +672,7 @@ void vtkSlicerPlusRemoteLogic::StopLiveVolumeReconstruction(vtkMRMLPlusRemoteNod
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::SaveConfigFile(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::SaveConfigFile(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -703,7 +704,7 @@ void vtkSlicerPlusRemoteLogic::SaveConfigFile(vtkMRMLPlusRemoteNode* parameterNo
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::UpdateTransform(vtkMRMLPlusRemoteNode* parameterNode)
+void vtkSlicerPlusRemoteLogic::UpdateTransform(vtkMRMLPlusRemoteNode * parameterNode)
 {
   if (!parameterNode)
   {
@@ -759,7 +760,7 @@ void vtkSlicerPlusRemoteLogic::UpdateTransform(vtkMRMLPlusRemoteNode* parameterN
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::ShowVolumeInSliceViewers(vtkMRMLVolumeNode* volumeNode, std::vector<std::string> sliceWidgetNames)
+void vtkSlicerPlusRemoteLogic::ShowVolumeInSliceViewers(vtkMRMLVolumeNode * volumeNode, std::vector<std::string> sliceWidgetNames)
 {
   // Displays volumeNode in the selected slice viewers as background volume
   // Existing background volume is pushed to foreground, existing foreground volume will not be shown anymore
@@ -771,7 +772,7 @@ void vtkSlicerPlusRemoteLogic::ShowVolumeInSliceViewers(vtkMRMLVolumeNode* volum
   std::string newVolumeNodeID = volumeNode->GetID();
 
   for (std::vector<std::string>::iterator sliceNameIt = sliceWidgetNames.begin();
-       sliceNameIt != sliceWidgetNames.end(); ++sliceNameIt)
+    sliceNameIt != sliceWidgetNames.end(); ++sliceNameIt)
   {
     std::string sliceName = *sliceNameIt;
     vtkMRMLSliceLogic* sliceLogic = this->GetApplicationLogic()->GetSliceLogicByLayoutName(sliceName.c_str());
@@ -784,7 +785,7 @@ void vtkSlicerPlusRemoteLogic::ShowVolumeInSliceViewers(vtkMRMLVolumeNode* volum
       // A volume is shown already, so we just need to make foreground semi-transparent to make sure the new volume will be visible
       sliceLogic->GetSliceCompositeNode()->SetForegroundOpacity(0.5);
       if ((foregroundVolumeNodeID && strcmp(foregroundVolumeNodeID, newVolumeNodeID.c_str()) == 0) ||
-          (backgroundVolumeNodeID && strcmp(backgroundVolumeNodeID, newVolumeNodeID.c_str()) == 0))
+        (backgroundVolumeNodeID && strcmp(backgroundVolumeNodeID, newVolumeNodeID.c_str()) == 0))
       {
         continue;
       }
@@ -800,7 +801,7 @@ void vtkSlicerPlusRemoteLogic::ShowVolumeInSliceViewers(vtkMRMLVolumeNode* volum
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::ShowVolumeRendering(vtkMRMLVolumeNode* volumeNode)
+void vtkSlicerPlusRemoteLogic::ShowVolumeRendering(vtkMRMLVolumeNode * volumeNode)
 {
   // Display reconstructed volume in Slicer 3D view
   if (!volumeNode)
@@ -890,7 +891,7 @@ std::string vtkSlicerPlusRemoteLogic::ParseFilenameFromMessage(std::string messa
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::InitializeROIFromVolume(vtkMRMLAnnotationROINode* roiNode, vtkMRMLVolumeNode* volumeNode)
+void vtkSlicerPlusRemoteLogic::InitializeROIFromVolume(vtkMRMLAnnotationROINode * roiNode, vtkMRMLVolumeNode * volumeNode)
 {
   // ROI is initialized to fit scout scan reconstructed volume
   if (!roiNode || !volumeNode)
@@ -949,7 +950,7 @@ void vtkSlicerPlusRemoteLogic::InitializeROIFromVolume(vtkMRMLAnnotationROINode*
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onRequestCaptureDeviceIDsCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onRequestCaptureDeviceIDsCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -993,7 +994,7 @@ void vtkSlicerPlusRemoteLogic::onRequestCaptureDeviceIDsCompleted(vtkObject* cal
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onRequestVolumeReconstructorDeviceIDsCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onRequestVolumeReconstructorDeviceIDsCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1037,7 +1038,7 @@ void vtkSlicerPlusRemoteLogic::onRequestVolumeReconstructorDeviceIDsCompleted(vt
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onRequestDeviceIDsCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onRequestDeviceIDsCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command || !command->GetSuccessful())
@@ -1082,7 +1083,7 @@ void vtkSlicerPlusRemoteLogic::onRequestDeviceIDsCompleted(vtkObject* caller, un
 
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onRecordingStarted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onRecordingStarted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1111,7 +1112,7 @@ void vtkSlicerPlusRemoteLogic::onRecordingStarted(vtkObject* caller, unsigned lo
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onRecordingCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onRecordingCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1155,7 +1156,7 @@ void vtkSlicerPlusRemoteLogic::onRecordingCompleted(vtkObject* caller, unsigned 
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onOfflineVolumeReconstructionCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onOfflineVolumeReconstructionCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1214,7 +1215,7 @@ void vtkSlicerPlusRemoteLogic::onOfflineVolumeReconstructionCompleted(vtkObject*
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onOfflineVolumeReconstructedFinalize(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+void vtkSlicerPlusRemoteLogic::onOfflineVolumeReconstructedFinalize(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
 {
   vtkPlusRemoteLogicCallbackCommand* callback = static_cast<vtkPlusRemoteLogicCallbackCommand*>(clientdata);
   vtkSlicerPlusRemoteLogic* self = callback->Logic;
@@ -1252,7 +1253,7 @@ void vtkSlicerPlusRemoteLogic::onOfflineVolumeReconstructedFinalize(vtkObject* c
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onScoutScanStarted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onScoutScanStarted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1272,7 +1273,7 @@ void vtkSlicerPlusRemoteLogic::onScoutScanStarted(vtkObject* caller, unsigned lo
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onScoutScanRecorded(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onScoutScanRecorded(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1339,7 +1340,7 @@ void vtkSlicerPlusRemoteLogic::onScoutScanRecorded(vtkObject* caller, unsigned l
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onScoutScanCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onScoutScanCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1385,7 +1386,7 @@ void vtkSlicerPlusRemoteLogic::onScoutScanCompleted(vtkObject* caller, unsigned 
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onScoutVolumeReconstructedFinalize(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+void vtkSlicerPlusRemoteLogic::onScoutVolumeReconstructedFinalize(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
 {
   vtkPlusRemoteLogicCallbackCommand* callback = static_cast<vtkPlusRemoteLogicCallbackCommand*>(clientdata);
   vtkSlicerPlusRemoteLogic* self = callback->Logic;
@@ -1433,7 +1434,7 @@ void vtkSlicerPlusRemoteLogic::onScoutVolumeReconstructedFinalize(vtkObject* cal
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructionStarted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructionStarted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1454,7 +1455,7 @@ void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructionStarted(vtkObject* call
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onLiveVolumeSnapshotAquired(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onLiveVolumeSnapshotAquired(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1487,7 +1488,7 @@ void vtkSlicerPlusRemoteLogic::onLiveVolumeSnapshotAquired(vtkObject* caller, un
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onSnapshotAquiredFinalize(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+void vtkSlicerPlusRemoteLogic::onSnapshotAquiredFinalize(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
 {
   vtkPlusRemoteLogicCallbackCommand* callback = static_cast<vtkPlusRemoteLogicCallbackCommand*>(clientdata);
   vtkSlicerPlusRemoteLogic* self = callback->Logic;
@@ -1523,7 +1524,7 @@ void vtkSlicerPlusRemoteLogic::onSnapshotAquiredFinalize(vtkObject* caller, unsi
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructionCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
+void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructionCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* vtkNotUsed(calldata))
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1575,7 +1576,7 @@ void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructionCompleted(vtkObject* ca
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructedFinalized(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructedFinalized(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
 {
   vtkPlusRemoteLogicCallbackCommand* callback = static_cast<vtkPlusRemoteLogicCallbackCommand*>(clientdata);
   vtkSlicerPlusRemoteLogic* self = callback->Logic;
@@ -1612,7 +1613,7 @@ void vtkSlicerPlusRemoteLogic::onLiveVolumeReconstructedFinalized(vtkObject* cal
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onPrintCommandResponseRequested(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+void vtkSlicerPlusRemoteLogic::onPrintCommandResponseRequested(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1644,8 +1645,8 @@ void vtkSlicerPlusRemoteLogic::UpdateAllPlusRemoteNodes()
   {
     vtkMRMLPlusRemoteNode* plusRemoteNode = vtkMRMLPlusRemoteNode::SafeDownCast(plusRemoteNodeIt->GetCurrentObject());
     if (plusRemoteNode == NULL ||
-        plusRemoteNode->GetLiveReconstructionStatus() != vtkMRMLPlusRemoteNode::PLUS_REMOTE_IN_PROGRESS ||
-        plusRemoteNode->GetLiveReconstructionSnapshotsIntervalSec() <= 0)
+      plusRemoteNode->GetLiveReconstructionStatus() != vtkMRMLPlusRemoteNode::PLUS_REMOTE_IN_PROGRESS ||
+      plusRemoteNode->GetLiveReconstructionSnapshotsIntervalSec() <= 0)
     {
       continue;
     }
@@ -1742,17 +1743,21 @@ struct ServerCommands
 {
   double CommandTimeoutSec;
   bool CommandBlocking;
+  ServerCommandCallback AddConfigFile;
   ServerCommandCallback StartServer;
   ServerCommandCallback StopServer;
   vtkNew<vtkCallbackCommand> CommandReceivedCallback;
   ServerCommands()
-    : StartServer(ServerCommandCallback())
   {
-    this->StartServer.Command->SetTimeoutSec(0.9);
+    this->AddConfigFile.Command->SetTimeoutSec(1.0);
+    this->AddConfigFile.Command->SetName("AddConfigFile");
+    this->AddConfigFile.Command->SetBlocking(true);
+
+    this->StartServer.Command->SetTimeoutSec(1.0);
     this->StartServer.Command->SetName("StartServer");
     this->StartServer.Command->SetBlocking(false);
 
-    this->StopServer.Command->SetTimeoutSec(0.9);
+    this->StopServer.Command->SetTimeoutSec(1.0);
     this->StopServer.Command->SetName("StopServer");
     this->StopServer.Command->SetBlocking(false);
   }
@@ -1783,17 +1788,16 @@ void vtkSlicerPlusRemoteLogic::UpdateAllLaunchers()
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::UpdateLauncher(vtkMRMLPlusServerLauncherNode* launcherNode)
+void vtkSlicerPlusRemoteLogic::UpdateLauncher(vtkMRMLPlusServerLauncherNode * launcherNode)
 {
   this->UpdateLauncherConnectorNode(launcherNode);
   this->SendGetRunningServersCommand(launcherNode);
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::SendGetRunningServersCommand(vtkMRMLPlusServerLauncherNode* launcherNode)
+void vtkSlicerPlusRemoteLogic::SendGetRunningServersCommand(vtkMRMLPlusServerLauncherNode * launcherNode)
 {
   LauncherCommands* commands = &this->LauncherCommandMap[launcherNode];
-  //commands->UpdateLauncherStatus.Command->SetCommandContent(ss.str());
   commands->GetRunningServers.Callback->Logic = this;
   commands->GetRunningServers.Callback->LauncherNode = launcherNode;
 
@@ -1805,46 +1809,40 @@ void vtkSlicerPlusRemoteLogic::SendGetRunningServersCommand(vtkMRMLPlusServerLau
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::UpdateLauncherConnectorNode(vtkMRMLPlusServerLauncherNode* launcherNode)
+void vtkSlicerPlusRemoteLogic::UpdateLauncherConnectorNode(vtkMRMLPlusServerLauncherNode * launcherNode)
 {
   if (!launcherNode)
   {
+    vtkErrorMacro("vtkSlicerPlusRemoteLogic::UpdateLauncherConnectorNode: Invalid launcher node");
     return;
   }
 
-  std::string hostname = launcherNode->GetHostname();
-  int port = launcherNode->GetPort();
-
+  // If the launcher should be connected and there is no connector node
   vtkMRMLIGTLConnectorNode* connectorNode = launcherNode->GetConnectorNode();
   if (!connectorNode)
   {
-    std::stringstream connectorNameSS;
-    if (launcherNode->GetName())
-    {
-      connectorNameSS << launcherNode->GetName();
-    }
-    else
-    {
-      connectorNameSS << "PlusServerLauncher";
-    }
-    connectorNameSS << "_Connector";
-    connectorNode = vtkMRMLIGTLConnectorNode::SafeDownCast(
-      this->GetMRMLScene()->AddNewNodeByClass("vtkMRMLIGTLConnectorNode", connectorNameSS.str()));
-    connectorNode->SetServerHostname(hostname);
-    connectorNode->SetServerPort(port);
-    launcherNode->SetAndObserveConnectorNode(connectorNode);
+    connectorNode = this->FindOrAddLauncherConnectorNode(launcherNode);
+  }
+
+  if (!connectorNode)
+  {
+    vtkErrorMacro("vtkSlicerPlusRemoteLogic::UpdateLauncherConnectorNode: Could not create connector node");
+    return;
   }
 
   if (connectorNode)
   {
+    std::string hostname = launcherNode->GetHostname();
+    int port = launcherNode->GetPort();
+
     int modify = connectorNode->StartModify();
     std::string connectorHostname;
     if (connectorNode->GetServerHostname())
     {
       connectorHostname = connectorNode->GetServerHostname();
     }
-
     int connectorPort = connectorNode->GetServerPort();
+
     if (connectorHostname != hostname || connectorPort != port)
     {
       if (connectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateOff)
@@ -1862,16 +1860,62 @@ void vtkSlicerPlusRemoteLogic::UpdateLauncherConnectorNode(vtkMRMLPlusServerLaun
     connectorNode->EndModify(modify);
   }
 
-  LauncherCommands* commands = &this->LauncherCommandMap[launcherNode];
-  if (!connectorNode->HasObserver(vtkMRMLIGTLConnectorNode::CommandCompletedEvent, commands->CommandReceivedCallback))
+  if (connectorNode)
   {
-    commands->CommandReceivedCallback->SetClientData(launcherNode);
-    connectorNode->AddObserver(vtkMRMLIGTLConnectorNode::CommandCompletedEvent, commands->CommandReceivedCallback);
+    LauncherCommands* commands = &this->LauncherCommandMap[launcherNode];
+    if (!connectorNode->HasObserver(vtkMRMLIGTLConnectorNode::CommandCompletedEvent, commands->CommandReceivedCallback))
+    {
+      commands->CommandReceivedCallback->SetClientData(launcherNode);
+      connectorNode->AddObserver(vtkMRMLIGTLConnectorNode::CommandCompletedEvent, commands->CommandReceivedCallback);
+    }
   }
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onLauncherCommandReceived(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+vtkMRMLIGTLConnectorNode* vtkSlicerPlusRemoteLogic::FindOrAddLauncherConnectorNode(vtkMRMLPlusServerLauncherNode * launcherNode)
+{
+  vtkMRMLIGTLConnectorNode* connectorNode = nullptr;
+
+  std::stringstream connectorNameSS;
+  if (launcherNode->GetName())
+  {
+    connectorNameSS << launcherNode->GetName();
+  }
+  else
+  {
+    connectorNameSS << "PlusServerLauncher";
+  }
+  connectorNameSS << "_Connector";
+  std::string connectorName = connectorNameSS.str();
+
+  std::string hostname = launcherNode->GetHostname();
+  int port = launcherNode->GetPort();
+
+  // Find existing node with the specified name if one exists
+  vtkSmartPointer<vtkCollection> nodes = vtkSmartPointer<vtkCollection>::Take(this->GetMRMLScene()->GetNodesByClassByName("vtkMRMLIGTLConnectorNode", connectorName.c_str()));
+  if (nodes->GetNumberOfItems() > 0)
+  {
+    for (int i = 0; i < nodes->GetNumberOfItems(); ++i)
+    {
+      connectorNode = vtkMRMLIGTLConnectorNode::SafeDownCast(nodes->GetItemAsObject(i));
+      break;
+    }
+  }
+
+  // Add a new connnector node to the scene
+  if (!connectorNode)
+  {
+    connectorNode = vtkMRMLIGTLConnectorNode::SafeDownCast(
+      this->GetMRMLScene()->AddNewNodeByClass("vtkMRMLIGTLConnectorNode", connectorName));
+    connectorNode->SetServerHostname(hostname);
+    connectorNode->SetServerPort(port);
+  }
+  launcherNode->SetAndObserveConnectorNode(connectorNode);
+  return connectorNode;
+}
+
+//---------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::onLauncherCommandReceived(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
 {
   igtlioCommand* command = static_cast<igtlioCommand*>(calldata);
   if (!command)
@@ -1882,16 +1926,16 @@ void vtkSlicerPlusRemoteLogic::onLauncherCommandReceived(vtkObject* caller, unsi
   std::string commandName = command->GetName();
   if (commandName == "ServerStarted")
   {
-    
+
   }
   else if (commandName == "ServerStopped")
   {
-    
+
   }
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject* caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
 {
   igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
   if (!command)
@@ -1940,13 +1984,11 @@ void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject* caller, u
     runningServersString.erase(0, pos + separatorString.length());
   }
 
-  std::vector<vtkMRMLNode*> serverNodes;
-  launcherNode->GetNodeReferences(vtkMRMLPlusServerLauncherNode::PLUS_SERVER_REFERENCE_ROLE, serverNodes);
-
+  std::vector<vtkMRMLPlusServerNode*> serverNodes = launcherNode->GetServerNodes();
   std::map<std::string, bool> serverRunning;
-  for (std::vector<vtkMRMLNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
+  for (std::vector<vtkMRMLPlusServerNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
   {
-    vtkMRMLPlusServerNode* serverNode = vtkMRMLPlusServerNode::SafeDownCast(*serverNodeIt);
+    vtkMRMLPlusServerNode* serverNode = *serverNodeIt;
     if (!serverNode)
     {
       continue;
@@ -1961,15 +2003,7 @@ void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject* caller, u
       }
       serverRunning[serverNode->GetID()] = true;
     }
-  }
 
-  for (std::vector<vtkMRMLNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
-  {
-    vtkMRMLPlusServerNode* serverNode = vtkMRMLPlusServerNode::SafeDownCast(*serverNodeIt);
-    if (!serverNode)
-    {
-      continue;
-    }
     if (serverRunning[serverNode->GetID()])
     {
       serverNode->SetState(vtkMRMLPlusServerNode::ServerStatus::On);
@@ -2009,7 +2043,7 @@ void vtkSlicerPlusRemoteLogic::UpdateAllServers()
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::UpdateServer(vtkMRMLPlusServerNode* serverNode)
+void vtkSlicerPlusRemoteLogic::UpdateServer(vtkMRMLPlusServerNode * serverNode)
 {
   if (!serverNode)
   {
@@ -2022,7 +2056,7 @@ void vtkSlicerPlusRemoteLogic::UpdateServer(vtkMRMLPlusServerNode* serverNode)
     {
       this->SendStartServerCommand(serverNode);
     }
-    //else if (true) // Config file is not the same as the desired
+    //else if (...) // TODO: Contents of config file in Plus not the same as the one in Slicer
     //{
     //  this->SendStopServerCommand(serverNode);
     //}
@@ -2034,40 +2068,66 @@ void vtkSlicerPlusRemoteLogic::UpdateServer(vtkMRMLPlusServerNode* serverNode)
       this->SendStopServerCommand(serverNode);
     }
   }
+
+  if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::ServerStatus::On &&
+    serverNode->GetState() == vtkMRMLPlusServerNode::ServerStatus::On)
+  {
+    this->UpdatePlusOpenIGTLinkConnectors(serverNode);
+  }
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::SendStartServerCommand(vtkMRMLPlusServerNode* serverNode)
+void vtkSlicerPlusRemoteLogic::UpdatePlusOpenIGTLinkConnectors(vtkMRMLPlusServerNode* serverNode)
 {
-  vtkMRMLPlusServerLauncherNode* launcherNode = serverNode->GetLauncherNode();
-  if (!launcherNode)
+  if (!serverNode || !serverNode->GetScene())
   {
     return;
   }
 
-  //int logLevel = d->ParameterSetNode->GetLogLevel();
-  std::stringstream startServerCommandText;
-  startServerCommandText << "<Command>" << std::endl;
-  //startServerCommandText << "  <LogLevel Value= \"" << logLevel << "\"/>" << std::endl;
-  startServerCommandText << "  <ConfigFileName Value= \"" << serverNode->GetConfigFileName() << "\"/>" << std::endl;
-  startServerCommandText << "</Command>" << std::endl;
-
-  ServerCommands* command = &this->ServerCommandMap[serverNode];
-  if (!command->StartServer.Command->IsInProgress())
+  std::vector<vtkMRMLPlusServerNode::PlusOpenIGTLinkServerInfo> plusOpenIGTLinkServers = serverNode->GetPlusOpenIGTLinkServers();
+  std::vector<vtkMRMLIGTLConnectorNode*> plusOpenIGTLinkConnectorNodes = serverNode->GetPlusOpenIGTLinkConnectorNodes();
+  for (std::vector<vtkMRMLIGTLConnectorNode*>::iterator connectorNodeIt = plusOpenIGTLinkConnectorNodes.begin();
+    connectorNodeIt != plusOpenIGTLinkConnectorNodes.end(); ++connectorNodeIt)
   {
-    command->StartServer.Command->SetCommandContent(startServerCommandText.str());
-    command->StartServer.Command->SetCommandMetaDataElement("ConfigFileName", serverNode->GetConfigFileName());
-    command->StartServer.Callback->ServerNode = serverNode;
-    if (launcherNode->GetConnectorNode())
+    vtkMRMLIGTLConnectorNode* connector = *connectorNodeIt;
+    if (!connector)
     {
-      launcherNode->GetConnectorNode()->SendCommand(command->StartServer.Command);
-      serverNode->SetState(vtkMRMLPlusServerNode::ServerStatus::Starting);
+      continue;
+    }
+    int port = connector->GetServerPort();
+    for (std::vector<vtkMRMLPlusServerNode::PlusOpenIGTLinkServerInfo>::iterator plusOpenIGTLinkServerIt = plusOpenIGTLinkServers.begin();
+      plusOpenIGTLinkServerIt != plusOpenIGTLinkServers.end(); ++plusOpenIGTLinkServerIt)
+    {
+      if (port == plusOpenIGTLinkServerIt->ListeningPort)
+      {
+        plusOpenIGTLinkServers.erase(plusOpenIGTLinkServerIt);
+        break;
+      }
     }
   }
+
+  vtkMRMLPlusServerLauncherNode* launcherNode = serverNode->GetLauncherNode();
+  for (std::vector<vtkMRMLPlusServerNode::PlusOpenIGTLinkServerInfo>::iterator plusOpenIGTLinkServerIt = plusOpenIGTLinkServers.begin();
+    plusOpenIGTLinkServerIt != plusOpenIGTLinkServers.end(); ++plusOpenIGTLinkServerIt)
+  {
+    std::stringstream ss;
+    ss << "PlusOpenIGTLinkServer_" << plusOpenIGTLinkServerIt->OutputChannelId << "_Connector";
+    vtkMRMLIGTLConnectorNode* connectorNode = vtkMRMLIGTLConnectorNode::SafeDownCast(
+      serverNode->GetScene()->AddNewNodeByClass("vtkMRMLIGTLConnectorNode", ss.str()));
+    connectorNode->SetServerPort(plusOpenIGTLinkServerIt->ListeningPort);
+    if (launcherNode)
+    {
+      connectorNode->SetServerHostname(launcherNode->GetHostname());
+    }
+    
+    serverNode->AddAndObservePlusOpenIGTLinkServerConnector(connectorNode);
+    connectorNode->Start();
+  }
+
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerPlusRemoteLogic::SendStopServerCommand(vtkMRMLPlusServerNode* serverNode)
+void vtkSlicerPlusRemoteLogic::SendStartServerCommand(vtkMRMLPlusServerNode * serverNode)
 {
   vtkMRMLPlusServerLauncherNode* launcherNode = serverNode->GetLauncherNode();
   if (!launcherNode)
@@ -2075,17 +2135,82 @@ void vtkSlicerPlusRemoteLogic::SendStopServerCommand(vtkMRMLPlusServerNode* serv
     return;
   }
 
-  //int logLevel = d->ParameterSetNode->GetLogLevel();
+  vtkMRMLIGTLConnectorNode* connectorNode = launcherNode->GetConnectorNode();
+  if (!connectorNode || connectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
+  {
+    return;
+  }
+
+  vtkMRMLTextNode* configFileNode = serverNode->GetConfigNode();
+  if (!configFileNode)
+  {
+    return;
+  }
+
+  ServerCommands* command = &this->ServerCommandMap[serverNode];
+  if (!command->AddConfigFile.Command->IsInProgress() || !command->StartServer.Command->IsInProgress())
+  {
+    std::string configFileName = serverNode->GetConfigFileName();
+
+    std::string configFileContent;
+    if (configFileNode->GetText())
+    {
+      configFileContent = configFileNode->GetText();
+    }
+
+    command->AddConfigFile.Command->SetCommandContent("<Command/>");
+    command->AddConfigFile.Command->SetCommandMetaDataElement("ConfigFileName", configFileName);
+    command->AddConfigFile.Command->SetCommandMetaDataElement("ConfigFileContent", configFileContent);
+    command->AddConfigFile.Callback->ServerNode = serverNode;
+    launcherNode->GetConnectorNode()->SendCommand(command->AddConfigFile.Command);
+
+    std::stringstream startServerCommandText;
+    startServerCommandText << "<Command>" << std::endl;
+    startServerCommandText << "  <ConfigFileName Value= \"" << configFileName << "\"/>" << std::endl;
+    startServerCommandText << "  <LogLevel Value= \"" << serverNode->GetLogLevel() << "\"/>" << std::endl;
+    startServerCommandText << "</Command>" << std::endl;
+
+    command->StartServer.Command->SetCommandContent(startServerCommandText.str());
+    command->StartServer.Command->SetCommandMetaDataElement("ConfigFileName", configFileName);
+    command->StartServer.Callback->ServerNode = serverNode;
+    launcherNode->GetConnectorNode()->SendCommand(command->StartServer.Command);
+    serverNode->SetState(vtkMRMLPlusServerNode::ServerStatus::Starting);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::SendStopServerCommand(vtkMRMLPlusServerNode * serverNode)
+{
+  vtkMRMLPlusServerLauncherNode* launcherNode = serverNode->GetLauncherNode();
+  if (!launcherNode)
+  {
+    return;
+  }
+
+  vtkMRMLIGTLConnectorNode* connectorNode = launcherNode->GetConnectorNode();
+  if (!connectorNode || connectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
+  {
+    return;
+  }
+
+  vtkMRMLTextNode* configFileNode = serverNode->GetConfigNode();
+  if (!configFileNode)
+  {
+    return;
+  }
+
+  std::string configFileName = serverNode->GetConfigFileName();
+
   std::stringstream startServerCommandText;
   startServerCommandText << "<Command>" << std::endl;
-  //startServerCommandText << "  <LogLevel Value= \"" << logLevel << "\"/>" << std::endl;
-  startServerCommandText << "  <ConfigFileName Value= \"" << "PlusDeviceSet_Server_Sim_3d.xml" << "\"/>" << std::endl;
+  startServerCommandText << "  <ConfigFileName Value= \"" << configFileName << "\"/>" << std::endl;
   startServerCommandText << "</Command>" << std::endl;
 
   ServerCommands* command = &this->ServerCommandMap[serverNode];
   if (!command->StopServer.Command->IsInProgress())
   {
     command->StopServer.Command->SetCommandContent(startServerCommandText.str());
+    command->StopServer.Command->SetCommandMetaDataElement("ConfigFileName", configFileName);
     command->StopServer.Callback->ServerNode = serverNode;
     if (launcherNode->GetConnectorNode())
     {

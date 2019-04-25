@@ -5,7 +5,7 @@
 #include "vtkSlicerOpenIGTLinkIFModuleMRMLExport.h"
 
 // MRML includes
-#include <vtkMRMLNode.h>
+#include <vtkMRMLStorableNode.h>
 
 // VTK includes
 #include <vtkStdString.h>
@@ -13,7 +13,7 @@
 // STD includes
 #include <sstream>
 
-class  VTK_SLICER_OPENIGTLINKIF_MODULE_MRML_EXPORT vtkMRMLTextNode : public vtkMRMLNode
+class  VTK_SLICER_OPENIGTLINKIF_MODULE_MRML_EXPORT vtkMRMLTextNode : public vtkMRMLStorableNode
 {
 public:
   enum
@@ -44,7 +44,7 @@ public:
 
   ///
   /// Get node XML tag name (like Volume, Model)
-  virtual const char* GetNodeTagName() override {return "Text";};
+  virtual const char* GetNodeTagName() override { return "Text"; };
 
   ///
   /// Set text encoding
@@ -59,9 +59,21 @@ public:
   vtkSetMacro(Encoding, int);
   vtkGetMacro(Encoding, int);
 
+  vtkSetMacro(ForceStorageNode, bool);
+  vtkGetMacro(ForceStorageNode, bool);
+
+  /// Create a storage node for this node type.
+  /// If it returns nullptr then it means the node can be stored
+  /// in the scene (in XML), without using a storage node.
+  virtual vtkMRMLStorageNode* CreateDefaultStorageNode() override;
+
+  /// Determines the most appropriate storage node class for the
+  /// provided file name and node content.
+  virtual std::string GetDefaultStorageNodeClassName(const char* vtkNotUsed(filename)=nullptr) { return "vtkMRMLTextStorageNode"; };
+
   enum
   {
-    TextModifiedEvent  = 30001,
+    TextModifiedEvent = 30001,
   };
 
 protected:
@@ -72,6 +84,8 @@ protected:
 
   char* Text;
   int Encoding;
+
+  bool ForceStorageNode;
 };
 
 #endif

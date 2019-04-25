@@ -1,7 +1,5 @@
 /*==============================================================================
 
-  Program: 3D Slicer
-
   Copyright (c) Laboratory for Percutaneous Surgery (PerkLab)
   Queen's University, Kingston, ON, Canada. All Rights Reserved.
 
@@ -15,13 +13,14 @@
   limitations under the License.
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
-  and was supported through the Applied Cancer Research Unit program of Cancer Care
-  Ontario with funds provided by the Ontario Ministry of Health and Long-Term Care
+  and was supported through CANARIE's Research Software Program, and Cancer
+  Care Ontario.
 
 ==============================================================================*/
 
 // PlusRemote includes
 #include "vtkMRMLPlusServerLauncherNode.h"
+#include "vtkMRMLPlusServerNode.h"
 
 // OpenIGTLinkIF includes
 #include <vtkMRMLIGTLConnectorNode.h>
@@ -29,6 +28,7 @@
 // MRML includes
 #include <vtkMRMLNode.h>
 #include <vtkMRMLScene.h>
+#include <vtkMRMLTextNode.h>
 
 // VTK includes
 #include <vtkNew.h>
@@ -39,8 +39,8 @@
 #include <sstream>
 
 //------------------------------------------------------------------------------
-const const char* vtkMRMLPlusServerLauncherNode::CONNECTOR_REFERENCE_ROLE = "connectorRef";
-const const char* vtkMRMLPlusServerLauncherNode::PLUS_SERVER_REFERENCE_ROLE = "plusServerRef";
+const char* vtkMRMLPlusServerLauncherNode::CONNECTOR_REFERENCE_ROLE = "connectorRef";
+const char* vtkMRMLPlusServerLauncherNode::PLUS_SERVER_REFERENCE_ROLE = "plusServerRef";
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLPlusServerLauncherNode);
@@ -49,7 +49,7 @@ vtkMRMLNodeNewMacro(vtkMRMLPlusServerLauncherNode);
 vtkMRMLPlusServerLauncherNode::vtkMRMLPlusServerLauncherNode()
   : Hostname("localhost")
   , Port(18904)
-  , LogLevel(LogLevel::Info)
+  , LogLevel(LOG_INFO)
 {
 }
 
@@ -117,4 +117,88 @@ vtkMRMLIGTLConnectorNode* vtkMRMLPlusServerLauncherNode::GetConnectorNode()
 void vtkMRMLPlusServerLauncherNode::SetAndObserveConnectorNode(vtkMRMLIGTLConnectorNode* node)
 {
   this->SetNodeReferenceID(CONNECTOR_REFERENCE_ROLE, (node ? node->GetID() : NULL));
+  this->Modified();
+}
+
+//----------------------------------------------------------------------------
+vtkMRMLPlusServerNode* vtkMRMLPlusServerLauncherNode::StartServer(vtkMRMLTextNode* configFileNode, int logLevel/*=LOG_INFO*/)
+{
+  if (!this->Scene)
+  {
+    vtkErrorMacro("vtkMRMLPlusServerLauncherNode::StartServer: Invalid scene");
+    return nullptr;
+  }
+
+  if (!configFileNode)
+  {
+    vtkErrorMacro("vtkMRMLPlusServerLauncherNode::StartServer: Invalid config file");
+    return nullptr;
+  }
+
+  std::stringstream ss;
+  ss << "PlusServer_" << configFileNode->GetName();
+  std::string baseName = ss.str();
+
+  vtkSmartPointer<vtkMRMLPlusServerNode> serverNode = vtkMRMLPlusServerNode::SafeDownCast(
+    this->Scene->AddNewNodeByClass("vtkMRMLPlusServerNode", baseName));
+  if (!serverNode)
+  {
+    vtkErrorMacro("vtkMRMLPlusServerLauncherNode::StartServer: Could not create server node");
+    return nullptr;
+  }
+
+  this->AddAndObserveServerNode(serverNode);
+  serverNode->SetAndObserveConfigNode(configFileNode);
+  serverNode->SetLogLevel(logLevel);
+  serverNode->StartServer();
+  return serverNode;
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLPlusServerLauncherNode::AddAndObserveServerNode(vtkMRMLPlusServerNode * node)
+{
+  int wasModifying = this->StartModify();
+  this->AddNodeReferenceID(PLUS_SERVER_REFERENCE_ROLE, (node ? node->GetID() : NULL));
+  node->SetNodeReferenceID(vtkMRMLPlusServerNode::LAUNCHER_REFERENCE_ROLE, this->GetID());
+  this->InvokeEvent(ServerAddedEvent, node);
+  this->Modified();
+  this->EndModify(wasModifying);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLPlusServerLauncherNode::RemoveServerNode(vtkMRMLPlusServerNode* node)
+{
+  for (int i = 0; i < this->GetNumberOfNodeReferences(PLUS_SERVER_REFERENCE_ROLE); ++i)
+  {
+    const char* id = this->GetNthNodeReferenceID(PLUS_SERVER_REFERENCE_ROLE, i);
+    if (strcmp(node->GetID(), id) == 0)
+    {
+      int wasModifying = this->StartModify();
+      this->RemoveNthNodeReferenceID(PLUS_SERVER_REFERENCE_ROLE, i);
+      this->InvokeEvent(ServerRemovedEvent, node);
+      this->Modified();
+      this->EndModify(wasModifying);
+      return;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+std::vector<vtkMRMLPlusServerNode*> vtkMRMLPlusServerLauncherNode::GetServerNodes()
+{
+  std::vector<vtkMRMLPlusServerNode*> serverNodes;
+  std::vector<vtkMRMLNode*> nodes;
+  this->GetNodeReferences(vtkMRMLPlusServerLauncherNode::PLUS_SERVER_REFERENCE_ROLE, nodes);
+
+  for (std::vector<vtkMRMLNode*>::iterator nodeIt = nodes.begin(); nodeIt != nodes.end(); ++nodeIt)
+  {
+    vtkMRMLPlusServerNode* serverNode = vtkMRMLPlusServerNode::SafeDownCast(*nodeIt);
+    if (!serverNode)
+    {
+      continue;
+    }
+    serverNodes.push_back(serverNode);
+  }
+
+  return serverNodes;
 }

@@ -128,9 +128,11 @@ public:
   void SendStartServerCommand(vtkMRMLPlusServerNode* serverNode);
   void SendStopServerCommand(vtkMRMLPlusServerNode* serverNode);
   void UpdateLauncherConnectorNode(vtkMRMLPlusServerLauncherNode* launcherNode);
+  vtkMRMLIGTLConnectorNode* FindOrAddLauncherConnectorNode(vtkMRMLPlusServerLauncherNode* launcherNode);
 
   void UpdateAllServers();
   void UpdateServer(vtkMRMLPlusServerNode* serverNode);
+  void UpdatePlusOpenIGTLinkConnectors(vtkMRMLPlusServerNode* serverNode);
   static void onGetRunningServersCompleted(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
   static void onLauncherCommandReceived(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
 
@@ -172,7 +174,7 @@ protected:
   static void onLiveVolumeReconstructionCompleted(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
 
   static void onPrintCommandResponseRequested(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
-  
+
   ///////////////////////
   // Delayed callbacks called when the required volumes in the scene are updated, invoked when the corresponding devices are modified
   static void onOfflineVolumeReconstructedFinalize(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);

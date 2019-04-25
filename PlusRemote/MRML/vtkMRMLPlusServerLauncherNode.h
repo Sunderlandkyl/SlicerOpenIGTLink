@@ -1,7 +1,5 @@
 /*==============================================================================
 
-  Program: 3D Slicer
-
   Copyright (c) Laboratory for Percutaneous Surgery (PerkLab)
   Queen's University, Kingston, ON, Canada. All Rights Reserved.
 
@@ -15,8 +13,8 @@
   limitations under the License.
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
-  and was supported through the Applied Cancer Research Unit program of Cancer Care
-  Ontario with funds provided by the Ontario Ministry of Health and Long-Term Care
+  and was supported through CANARIE's Research Software Program, and Cancer
+  Care Ontario.
 
 ==============================================================================*/
 
@@ -29,11 +27,16 @@
 // PlusRemote includes
 #include "vtkSlicerPlusRemoteModuleMRMLExport.h"
 
-class vtkMRMLScene;
+
+// VTK includes
+#include <vtkCommand.h>
+
 class vtkMRMLIGTLConnectorNode;
+class vtkMRMLPlusServerNode;
+class vtkMRMLScene;
 class vtkMRMLTextNode;
 
-/// \ingroup Segmentations
+/// \ingroup IGT
 /// \brief Parameter set node for the plus remote launcher widget
 ///
 class VTK_SLICER_PLUSREMOTE_MODULE_MRML_EXPORT vtkMRMLPlusServerLauncherNode : public vtkMRMLNode
@@ -60,17 +63,20 @@ public:
   static const char* CONNECTOR_REFERENCE_ROLE;
   static const char* PLUS_SERVER_REFERENCE_ROLE;
 
-  enum LogLevel
+  enum
   {
-    Error = 1,
-    Warning = 2,
-    Info = 3,
-    Debug = 4,
-    Trace = 5,
+    LOG_ERROR = 1,
+    LOG_WARNING = 2,
+    LOG_INFO = 3,
+    LOG_DEBUG = 4,
+    LOG_TRACE = 5,
   };
 
-  vtkGetMacro(State, int);
-  vtkSetMacro(State, int);
+  enum
+  {
+    ServerAddedEvent = vtkCommand::UserEvent + 701,
+    ServerRemovedEvent,
+  };
 
   vtkGetMacro(Hostname, std::string);
   vtkSetMacro(Hostname, std::string);
@@ -81,13 +87,21 @@ public:
   vtkGetMacro(LogLevel, int);
   vtkSetMacro(LogLevel, int);
 
+  // Create a server node using the configFileNode and set the desired state to on
+  vtkMRMLPlusServerNode* StartServer(vtkMRMLTextNode* configFileNode, int logLevel = LOG_INFO);
+
   /// Get launcher connector node
   vtkMRMLIGTLConnectorNode* GetConnectorNode();
   /// Set and observe launcher connector node
   void SetAndObserveConnectorNode(vtkMRMLIGTLConnectorNode* node);
+  ///
+  void AddAndObserveServerNode(vtkMRMLPlusServerNode* serverNode);
+  ///
+  void RemoveServerNode(vtkMRMLPlusServerNode* serverNode);
+  ///
+  std::vector<vtkMRMLPlusServerNode*> GetServerNodes();
 
 private:
-  int State;
   std::string Hostname;
   int Port;
   int LogLevel;

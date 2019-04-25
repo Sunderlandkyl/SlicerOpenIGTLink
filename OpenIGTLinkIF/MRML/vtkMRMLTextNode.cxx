@@ -1,15 +1,26 @@
-#include "vtkObjectFactory.h"
+
+// SlicerOpenIGTLink MRML includes
 #include "vtkMRMLTextNode.h"
+#include "vtkMRMLTextStorageNode.h"
+
+// MRML includes
+#include <vtkMRMLScene.h>
+
+// VTK includes
+#include "vtkObjectFactory.h"
 #include "vtkXMLUtilities.h"
+
+const int LENGTH_BEFORE_STORAGE_NODE = 256;
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLTextNode);
 
 //-----------------------------------------------------------------------------
 vtkMRMLTextNode::vtkMRMLTextNode()
+  : Text(NULL)
+  , Encoding(ENCODING_US_ASCII)
+  , ForceStorageNode(false)
 {
-  this->Text = NULL;
-  this->Encoding = ENCODING_US_ASCII;
 }
 
 //-----------------------------------------------------------------------------
@@ -130,3 +141,22 @@ void vtkMRMLTextNode::PrintSelf(ostream& os, vtkIndent indent)
   os << "Encoding: " << this->GetEncoding() << "\n";
 }
 
+//---------------------------------------------------------------------------
+vtkMRMLStorageNode* vtkMRMLTextNode::CreateDefaultStorageNode()
+{
+  if (!this->Text || !this->Scene)
+  {
+    return nullptr;
+  }
+
+  if (!this->ForceStorageNode)
+  {
+    int length = strlen(this->Text);
+    if (length < LENGTH_BEFORE_STORAGE_NODE)
+    {
+      return nullptr;
+    }
+  }
+  return vtkMRMLTextStorageNode::SafeDownCast(
+    this->Scene->CreateNodeByClass(this->GetDefaultStorageNodeClassName().c_str()));
+}
