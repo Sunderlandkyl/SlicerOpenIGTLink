@@ -112,6 +112,6 @@ bool qSlicerTextFileReader::load(const IOProperties& properties)
     this->mrmlScene()->RemoveNode(storageNode);
     return false;
   }
-  
+
   return true;
 }

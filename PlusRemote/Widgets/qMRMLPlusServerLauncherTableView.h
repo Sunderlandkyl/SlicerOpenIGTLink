@@ -32,6 +32,7 @@
 
 class qMRMLPlusServerLauncherTableViewPrivate;
 class vtkMRMLNode;
+class QComboBox;
 class QTableWidgetItem;
 class QItemSelection;
 class vtkMRMLPlusServerNode;
@@ -65,7 +66,9 @@ public slots:
   vtkMRMLPlusServerNode* getSelectedServer();
 
   /// Handle changing of values in a cell
-  void onTableSelectionChanged();
+  void updateSelectedServerPanel();
+
+  int getRowForServer(vtkMRMLPlusServerNode* serverNode) const;
 
 signals:
   /// Emitted if selection changes
@@ -75,9 +78,9 @@ protected slots:
 
 
   /// Update table according to the node
-  void updateWidgetFromMRML();
-
-  void updateMRMLFromWidget();
+  void updateWidgetFromLauncherMRML();
+  void updateWidgetFromServerMRML(vtkObject* caller, void* callData=nullptr);
+  void updateServerMRMLFromWidget();
 
 
   /// To prevent accidentally moving out of the widget when pressing up/down arrows

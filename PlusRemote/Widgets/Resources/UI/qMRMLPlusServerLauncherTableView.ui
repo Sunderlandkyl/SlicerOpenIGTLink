@@ -45,7 +45,7 @@
      </property>
      <column>
       <property name="text">
-       <string>Status</string>
+       <string>ID</string>
       </property>
      </column>
      <column>
@@ -55,12 +55,12 @@
      </column>
      <column>
       <property name="text">
-       <string>Log level</string>
+       <string>Control</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>Description</string>
+       <string>State</string>
       </property>
      </column>
     </widget>
@@ -70,17 +70,10 @@
      <property name="fieldGrowthPolicy">
       <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
      </property>
-     <item row="1" column="1">
-      <widget class="QPushButton" name="StartStopButton">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
+     <item row="0" column="0">
+      <widget class="QLabel" name="ConfigFileLabel">
        <property name="text">
-        <string>Launch server</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../qMRMLPlusServerLauncherRemoteWidget.qrc">
-         <normaloff>:/Icons/PlusLauncherRemoteConnect.png</normaloff>:/Icons/PlusLauncherRemoteConnect.png</iconset>
+        <string>Config file:</string>
        </property>
       </widget>
      </item>
@@ -102,12 +95,25 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="ConfigFileLabel">
+     <item row="2" column="0">
+      <widget class="QLabel" name="LogLevelLabel">
        <property name="text">
-        <string>Config file:</string>
+        <string>Log level:</string>
        </property>
       </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="DescriptionLabel">
+       <property name="text">
+        <string>Description:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QTextEdit" name="DescriptionTextEdit"/>
+     </item>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="LogLevelComboBox"/>
      </item>
     </layout>
    </item>

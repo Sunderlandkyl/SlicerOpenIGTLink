@@ -84,6 +84,7 @@ public:
     LOG_INFO = 3,
     LOG_DEBUG = 4,
     LOG_TRACE = 5,
+    LogLast,
   };
 
   vtkGetMacro(DesiredState, int);
@@ -145,16 +146,16 @@ public:
   void SetDesiredStateFromString(const char* stateString);
   void SetStateFromString(const char* stateString);
 
-  std::string GetDesiredStateAsString() const;
-  std::string GetStateAsString() const;
+  static const char* GetLogLevelAsString(int logLevel);
+  static const char* GetDesiredStateAsString(int state);
+  static int GetDesiredStateFromString(const char*);
+  static const char* GetStateAsString(int state);
+  static int GetStateFromString(const char*);
 
   void UpdateConfigFileInfo();
 
 protected:
-  const char* GetDesiredStateAsString(int state) const;
-  int GetDesiredStateFromString(const char*) const;
-  const char* GetStateAsString(int state) const;
-  int GetStateFromString(const char*) const;
+
 
   int DesiredState;
   int State;

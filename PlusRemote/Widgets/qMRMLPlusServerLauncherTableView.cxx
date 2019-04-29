@@ -44,10 +44,10 @@
 
 enum ServerColumns
 {
-  Status,
-  Name, 
-  LogLevel,
-  Description,
+  ID,
+  Name,
+  Control,
+  State,
   LastColumn
 };
 
@@ -71,6 +71,13 @@ public:
   /// RT plan MRML node containing shown beams
   vtkWeakPointer<vtkMRMLPlusServerLauncherNode> LauncherNode;
 
+  QPixmap IconLaunch;
+  QPixmap IconStop;
+  QPixmap IconOn;
+  QPixmap IconOff;
+  QPixmap IconStarting;
+  QPixmap IconStopping;
+
 private:
   QStringList ColumnLabels;
 };
@@ -78,6 +85,12 @@ private:
 //-----------------------------------------------------------------------------
 qMRMLPlusServerLauncherTableViewPrivate::qMRMLPlusServerLauncherTableViewPrivate(qMRMLPlusServerLauncherTableView& object)
   : q_ptr(&object)
+  , IconLaunch(":/Icons/PlusLauncherRemoteDisconnected.png")
+  , IconStop(":/Icons/PlusLauncherRemoteDisconnected.png")
+  , IconOn(":/Icons/PlusLauncherRemoteDisconnected.png")
+  , IconOff(":/Icons/PlusLauncherRemoteDisconnected.png")
+  , IconStarting(":/Icons/PlusLauncherRemoteDisconnected.png")
+  , IconStopping(":/Icons/PlusLauncherRemoteDisconnected.png")
 {
   this->LauncherNode = nullptr;
 }
@@ -93,30 +106,33 @@ void qMRMLPlusServerLauncherTableViewPrivate::init()
   {
     this->ColumnLabels << "";
   }
+  this->ColumnLabels[ServerColumns::ID] = "ID";
   this->ColumnLabels[ServerColumns::Name] = "Name";
-  this->ColumnLabels[ServerColumns::LogLevel] = "Log level";
-  this->ColumnLabels[ServerColumns::Description] = "Description";
-  this->ColumnLabels[ServerColumns::Status] = "Status";
+  this->ColumnLabels[ServerColumns::Control] = "Control";
+  this->ColumnLabels[ServerColumns::State] = "State";
   this->PlusServerLauncherTable->setHorizontalHeaderLabels(this->ColumnLabels);
   this->PlusServerLauncherTable->setColumnCount(this->ColumnLabels.size());
-
-#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
-  this->PlusServerLauncherTable->horizontalHeader()->setResizeMode(QHeaderView::ResizeToContents);
-#else
-  this->PlusServerLauncherTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-#endif
-  this->PlusServerLauncherTable->horizontalHeader()->setStretchLastSection(1);
+  for (int i = 0; i < this->ColumnLabels.size(); ++i)
+  {
+    if (i == ServerColumns::Name)
+    {
+      this->PlusServerLauncherTable->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Stretch);
+    }
+    else
+    {
+      this->PlusServerLauncherTable->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Fixed);
+    }
+  }
 
   // Select rows
   this->PlusServerLauncherTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
   // Make connections
   QObject::connect(this->PlusServerLauncherTable, SIGNAL(itemSelectionChanged()),
-    q, SLOT(onTableSelectionChanged()));
+    q, SLOT(updateSelectedServerPanel()));
   QObject::connect(this->AddServerButton, SIGNAL(clicked()), q, SLOT(onAddServer()));
   QObject::connect(this->RemoveServerButton, SIGNAL(clicked()), q, SLOT(onRemoveServer()));
-  QObject::connect(this->ConfigFileComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(updateMRMLFromWidget()));
-  QObject::connect(this->StartStopButton, SIGNAL(clicked()), q, SLOT(onStartStopServer()));
+  QObject::connect(this->ConfigFileComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(updateServerMRMLFromWidget()));
 
   this->PlusServerLauncherTable->installEventFilter(q);
 }
@@ -131,7 +147,7 @@ qMRMLPlusServerLauncherTableView::qMRMLPlusServerLauncherTableView(QWidget* _par
 {
   Q_D(qMRMLPlusServerLauncherTableView);
   d->init();
-  this->updateWidgetFromMRML();
+  this->updateWidgetFromLauncherMRML();
 }
 
 //-----------------------------------------------------------------------------
@@ -145,7 +161,7 @@ void qMRMLPlusServerLauncherTableView::setLauncherNode(vtkMRMLNode* node)
   vtkMRMLPlusServerLauncherNode* launcherNode = vtkMRMLPlusServerLauncherNode::SafeDownCast(node);
 
   // Connect modified events to population of the table
-  qvtkReconnect(d->LauncherNode, launcherNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromMRML()));
+  qvtkReconnect(d->LauncherNode, launcherNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromLauncherMRML()));
   qvtkReconnect(d->LauncherNode, launcherNode, vtkMRMLPlusServerLauncherNode::ServerAddedEvent, this, SLOT(onServerAdded(vtkObject*, void*)));
   qvtkReconnect(d->LauncherNode, launcherNode, vtkMRMLPlusServerLauncherNode::ServerRemovedEvent, this, SLOT(onServerRemoved(vtkObject*, void*)));
 
@@ -155,7 +171,7 @@ void qMRMLPlusServerLauncherTableView::setLauncherNode(vtkMRMLNode* node)
     for (std::vector<vtkMRMLPlusServerNode*>::iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt)
     {
       vtkMRMLPlusServerNode* serverNode = (*serverIt);
-      qvtkDisconnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromMRML()));
+      qvtkDisconnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromServerMRML(vtkObject*, void*)));
     }
   }
 
@@ -167,12 +183,12 @@ void qMRMLPlusServerLauncherTableView::setLauncherNode(vtkMRMLNode* node)
     {
       vtkMRMLPlusServerNode* serverNode = (*serverIt);
       serverNode->UpdateConfigFileInfo();
-      qvtkConnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromMRML()));
+      qvtkConnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromServerMRML(vtkObject*, void*)));
     }
   }
 
   d->LauncherNode = launcherNode;
-  this->updateWidgetFromMRML();
+  this->updateWidgetFromLauncherMRML();
 }
 
 //-----------------------------------------------------------------------------
@@ -184,7 +200,7 @@ vtkMRMLNode* qMRMLPlusServerLauncherTableView::launcherNode()
 }
 
 //-----------------------------------------------------------------------------
-void qMRMLPlusServerLauncherTableView::updateWidgetFromMRML()
+void qMRMLPlusServerLauncherTableView::updateWidgetFromLauncherMRML()
 {
   Q_D(qMRMLPlusServerLauncherTableView);
 
@@ -192,17 +208,14 @@ void qMRMLPlusServerLauncherTableView::updateWidgetFromMRML()
   d->AddServerButton->setEnabled(d->LauncherNode);
   d->RemoveServerButton->setEnabled(d->LauncherNode);
   d->ConfigFileComboBox->setEnabled(d->LauncherNode);
-  d->StartStopButton->setEnabled(d->LauncherNode);
 
   if (!d->LauncherNode)
   {
     return;
   }
 
-  vtkMRMLPlusServerNode* selectedServerNode = this->getSelectedServer();
-
   // Block signals so that onBeamTableItemChanged function is not called when populating
-  bool wasBlocking = d->PlusServerLauncherTable->blockSignals(true);
+  bool tableWasBlocking = d->PlusServerLauncherTable->blockSignals(true);
   d->PlusServerLauncherTable->clearContents();
 
   std::vector<vtkMRMLPlusServerNode*> serverNodes = d->LauncherNode->GetServerNodes();
@@ -215,54 +228,21 @@ void qMRMLPlusServerLauncherTableView::updateWidgetFromMRML()
     {
       QTableWidgetItem* item = new QTableWidgetItem();
       item->setData(ItemTypeServerNodeId, serverNode->GetID());
+      item->setFlags(item->flags() & ~Qt::ItemIsEditable);
       d->PlusServerLauncherTable->setItem(i, j, item);
+      if (j == ServerColumns::Control)
+      {
+        QPushButton* startStopButton = new QPushButton(this);
+        startStopButton->setIcon(d->IconLaunch);
+        d->PlusServerLauncherTable->setCellWidget(i, j, startStopButton);
+        QObject::connect(startStopButton, SIGNAL(clicked()), this, SLOT(onStartStopServer()));
+      }
     }
 
-    QString logLevel;
-    switch (serverNode->GetLogLevel())
-    {
-    case vtkMRMLPlusServerNode::LOG_DEBUG:
-      logLevel = "Debug";
-      break;
-    case vtkMRMLPlusServerNode::LOG_ERROR:
-      logLevel = "Error";
-      break;
-    case vtkMRMLPlusServerNode::LOG_INFO:
-      logLevel = "Info";
-      break;
-    case vtkMRMLPlusServerNode::LOG_TRACE:
-      logLevel = "Trace";
-      break;
-    case vtkMRMLPlusServerNode::LOG_WARNING:
-      logLevel = "Warning";
-      break;
-    }
-
-    QString status;
-    switch (serverNode->GetState())
-    {
-    case vtkMRMLPlusServerNode::State::On:
-      status = "On";
-      break;
-    case vtkMRMLPlusServerNode::State::Off:
-      status = "Off";
-      break;
-    case vtkMRMLPlusServerNode::State::Starting:
-      status = "Starting";
-      break;
-    case vtkMRMLPlusServerNode::State::Stopping:
-      status = "Stopping";
-      break;
-    }
-
-    std::string name = serverNode->GetDeviceSetName();
-    std::string  decription = serverNode->GetDeviceSetDescription();
-    d->PlusServerLauncherTable->item(i, ServerColumns::Name)->setText(name.c_str());
-    d->PlusServerLauncherTable->item(i, ServerColumns::LogLevel)->setText(logLevel);
-    d->PlusServerLauncherTable->item(i, ServerColumns::Description)->setText(decription.c_str());
-    d->PlusServerLauncherTable->item(i, ServerColumns::Status)->setText(status);
+    this->updateWidgetFromServerMRML(serverNode);
   }
 
+  vtkMRMLPlusServerNode* selectedServerNode = this->getSelectedServer();
   if (selectedServerNode)
   {
     for (int i = 0; i < numberOfNodes; ++i)
@@ -277,38 +257,34 @@ void qMRMLPlusServerLauncherTableView::updateWidgetFromMRML()
   }
 
   // Unblock signals
-  d->PlusServerLauncherTable->blockSignals(wasBlocking);
+  d->PlusServerLauncherTable->blockSignals(tableWasBlocking);
 
-  vtkMRMLPlusServerNode* serverNode = this->getSelectedServer();
-  d->ConfigFileComboBox->setEnabled(serverNode);
-
-  vtkMRMLTextNode* configFileNode = nullptr;
-  if (serverNode)
-  {
-    d->ConfigFileComboBox->setEnabled(serverNode->GetState() == vtkMRMLPlusServerNode::State::Off);
-    configFileNode = serverNode->GetConfigNode();
-    if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::On)
-    {
-      d->StartStopButton->setText("Stop server");
-    }
-    else
-    {
-      d->StartStopButton->setText("Launch server");
-    }
-  }
-
-  if (configFileNode)
-  {
-    wasBlocking = d->ConfigFileComboBox->blockSignals(true);
-    d->ConfigFileComboBox->setCurrentNodeID(configFileNode->GetID());
-    d->ConfigFileComboBox->blockSignals(wasBlocking);
-  }
-
-  d->StartStopButton->setEnabled(serverNode && configFileNode);
+  this->updateSelectedServerPanel();
 }
 
 //-----------------------------------------------------------------------------
-void qMRMLPlusServerLauncherTableView::updateMRMLFromWidget()
+void qMRMLPlusServerLauncherTableView::updateWidgetFromServerMRML(vtkObject* caller, void* callData)
+{
+  Q_D(qMRMLPlusServerLauncherTableView);
+
+  vtkMRMLPlusServerNode* serverNode = vtkMRMLPlusServerNode::SafeDownCast(caller);
+  if (serverNode)
+  {
+    std::string name = serverNode->GetDeviceSetName();
+    std::string  decription = serverNode->GetDeviceSetDescription();
+    int logLevel = serverNode->GetLogLevel();
+    QString state = serverNode->GetStateAsString(serverNode->GetState());
+
+    int row = this->getRowForServer(serverNode);
+    d->PlusServerLauncherTable->item(row, ServerColumns::Name)->setText(name.c_str());
+    d->PlusServerLauncherTable->item(row, ServerColumns::State)->setIcon(d->IconOn);
+  }
+
+  this->updateSelectedServerPanel();
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLPlusServerLauncherTableView::updateServerMRMLFromWidget()
 {
   Q_D(qMRMLPlusServerLauncherTableView);
 
@@ -317,17 +293,40 @@ void qMRMLPlusServerLauncherTableView::updateMRMLFromWidget()
     return;
   }
 
-  vtkMRMLPlusServerNode* serverNode = this->getSelectedServer();
+  vtkMRMLPlusServerNode* selectedServerNode = this->getSelectedServer();
+  for (vtkMRMLPlusServerNode* serverNode : d->LauncherNode->GetServerNodes())
+  {
+    int wasModifying = serverNode->StartModify();
+    int logLevel = d->LogLevelComboBox->currentData().toInt();
+    serverNode->SetLogLevel(logLevel);
+    if (selectedServerNode && selectedServerNode == serverNode)
+    {
+      vtkMRMLTextNode* configFileNode = vtkMRMLTextNode::SafeDownCast(d->ConfigFileComboBox->currentNode());
+      selectedServerNode->SetAndObserveConfigNode(configFileNode);
+    }
+    serverNode->EndModify(wasModifying);
+  }
+}
+
+//-----------------------------------------------------------------------------
+int qMRMLPlusServerLauncherTableView::getRowForServer(vtkMRMLPlusServerNode* serverNode) const
+{
+  Q_D(const qMRMLPlusServerLauncherTableView);
   if (!serverNode)
   {
-    return;
+    return -1;
   }
-  int wasModifying = serverNode->StartModify();
 
-  vtkMRMLTextNode* configFileNode = vtkMRMLTextNode::SafeDownCast(d->ConfigFileComboBox->currentNode());
-  serverNode->SetAndObserveConfigNode(configFileNode);
-
-  serverNode->EndModify(wasModifying);
+  for (int i = 0; i < d->PlusServerLauncherTable->rowCount(); ++i)
+  {
+    QVariant rowData = d->PlusServerLauncherTable->item(i, 0)->data(ItemTypeServerNodeId);
+    QString rowString = rowData.toString();
+    if (rowData == serverNode->GetID())
+    {
+      return i;
+    }
+  }
+  return -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -335,7 +334,14 @@ vtkMRMLPlusServerNode* qMRMLPlusServerLauncherTableView::getSelectedServer()
 {
   Q_D(qMRMLPlusServerLauncherTableView);
 
-  int row = d->PlusServerLauncherTable->currentRow();
+  int row = -1;
+
+  QList<QTableWidgetSelectionRange> ranges = d->PlusServerLauncherTable->selectedRanges();
+  for (QTableWidgetSelectionRange range : ranges)
+  {
+    row = std::max(range.topRow(), row);
+  }
+
   if (row < 0)
   {
     return nullptr;
@@ -353,23 +359,31 @@ vtkMRMLPlusServerNode* qMRMLPlusServerLauncherTableView::getSelectedServer()
 }
 
 //-----------------------------------------------------------------------------
-void qMRMLPlusServerLauncherTableView::onTableSelectionChanged()
+void qMRMLPlusServerLauncherTableView::updateSelectedServerPanel()
 {
   Q_D(qMRMLPlusServerLauncherTableView);
 
   vtkMRMLPlusServerNode* serverNode = this->getSelectedServer();
-
   d->ConfigFileComboBox->setEnabled(serverNode);
 
+
   vtkMRMLTextNode* configFileNode = nullptr;
-  d->ConfigFileComboBox->setEnabled(false);
+  QString configFileNodeID;
   if (serverNode)
   {
     configFileNode = serverNode->GetConfigNode();
-    d->ConfigFileComboBox->setEnabled(serverNode->GetState() == vtkMRMLPlusServerNode::State::Off);
+    if (configFileNode)
+    {
+      configFileNodeID = configFileNode->GetID();
+    }
+
+    d->ConfigFileComboBox->setEnabled(serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::Off &&
+      serverNode->GetState() == vtkMRMLPlusServerNode::State::Off);
   }
-  d->StartStopButton->setEnabled(serverNode && configFileNode);
-  d->ConfigFileComboBox->setCurrentNodeID(configFileNode ? configFileNode->GetID() : "");
+
+  bool configComboBoxWasBlocking = d->ConfigFileComboBox->blockSignals(true);
+  d->ConfigFileComboBox->setCurrentNodeID(configFileNodeID);
+  d->ConfigFileComboBox->blockSignals(configComboBoxWasBlocking);
 }
 
 //-----------------------------------------------------------------------------
@@ -420,16 +434,6 @@ void qMRMLPlusServerLauncherTableView::onStartStopServer()
     return;
   }
 
-  if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::On)
-  {
-    serverNode->StopServer();
-    d->StartStopButton->setText("Launch server");
-  }
-  else
-  {
-    serverNode->StartServer();
-    d->StartStopButton->setText("Stop server");
-  }
 }
 
 //------------------------------------------------------------------------------
@@ -472,7 +476,7 @@ void qMRMLPlusServerLauncherTableView::onServerAdded(vtkObject* caller, void* ca
   {
     return;
   }
-  qvtkConnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromMRML()));
+  qvtkConnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromServerMRML(vtkObject*, void*)));
 }
 
 //------------------------------------------------------------------------------
@@ -486,5 +490,5 @@ void qMRMLPlusServerLauncherTableView::onServerRemoved(vtkObject* caller, void* 
   {
     return;
   }
-  qvtkDisconnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromMRML()));
+  qvtkDisconnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromServerMRML(vtkObject*, void*)));
 }

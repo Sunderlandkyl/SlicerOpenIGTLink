@@ -1842,7 +1842,18 @@ void vtkSlicerPlusRemoteLogic::UpdateAllLaunchers()
 void vtkSlicerPlusRemoteLogic::UpdateLauncher(vtkMRMLPlusServerLauncherNode * launcherNode)
 {
   this->UpdateLauncherConnectorNode(launcherNode);
-  this->SendGetRunningServersCommand(launcherNode);
+
+  if (launcherNode->GetConnectorNode() && launcherNode->GetConnectorNode()->GetState() == vtkMRMLIGTLConnectorNode::StateConnected)
+  {
+    this->SendGetRunningServersCommand(launcherNode);
+  }
+  else
+  {
+    for (vtkMRMLPlusServerNode* serverNode : launcherNode->GetServerNodes())
+    {
+      serverNode->SetState(vtkMRMLPlusServerNode::State::Off);
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
