@@ -53,7 +53,8 @@ vtkMRMLNodeNewMacro(vtkMRMLPlusServerNode);
 
 //----------------------------------------------------------------------------
 vtkMRMLPlusServerNode::vtkMRMLPlusServerNode()
-  : DesiredState(State::Off)
+  : ControlledLocally(true)
+  , DesiredState(State::Off)
   , State(State::Off)
   , LogLevel(LOG_INFO)
   , TimeoutSeconds(15.0)

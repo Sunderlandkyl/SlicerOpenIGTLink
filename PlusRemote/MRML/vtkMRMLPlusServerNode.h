@@ -45,7 +45,7 @@ public:
 
   enum State
   {
-    Off,
+    Off = 0,
     On,
     Starting,
     Stopping,
@@ -86,6 +86,12 @@ public:
     LOG_TRACE = 5,
     LogLast,
   };
+
+  vtkGetMacro(ServerID, std::string);
+  vtkSetMacro(ServerID, std::string);
+
+  vtkGetMacro(ControlledLocally, bool);
+  vtkSetMacro(ControlledLocally, bool);
 
   vtkGetMacro(DesiredState, int);
   vtkSetMacro(DesiredState, int);
@@ -156,7 +162,8 @@ public:
 
 protected:
 
-
+  std::string ServerID;
+  bool ControlledLocally;
   int DesiredState;
   int State;
   int LogLevel;

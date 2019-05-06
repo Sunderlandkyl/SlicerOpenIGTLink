@@ -359,7 +359,8 @@ void vtkSlicerPlusRemoteLogic::OnMRMLSceneNodeAboutToBeRemoved(vtkMRMLNode* node
     vtkMRMLPlusServerLauncherNode* launcherNode = serverNode->GetLauncherNode();
     if (launcherNode)
     {
-      if (serverNode->GetState() == vtkMRMLPlusServerNode::State::On)
+      if (serverNode->GetControlledLocally() &&
+        serverNode->GetState() == vtkMRMLPlusServerNode::State::On)
       {
         this->SendStopServerCommand(serverNode);
       }
@@ -2023,6 +2024,12 @@ void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject * caller, 
     return;
   }
 
+  vtkMRMLScene* scene = self->GetMRMLScene();
+  if (!scene)
+  {
+    return;
+  }
+
   vtkMRMLPlusServerLauncherNode* launcherNode = callback->LauncherNode;
   if (!launcherNode)
   {
@@ -2059,35 +2066,53 @@ void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject * caller, 
   std::map<std::string, bool> serverRunning;
   for (std::vector<vtkMRMLPlusServerNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
   {
-    vtkMRMLPlusServerNode* serverNode = *serverNodeIt;
-    if (!serverNode)
+    serverRunning[(*serverNodeIt)->GetID()] = false;
+  }
+
+  for (std::vector<std::string>::iterator runningServerIt = runningServers.begin(); runningServerIt != runningServers.end(); ++runningServerIt)
+  {
+    vtkSmartPointer<vtkMRMLPlusServerNode> serverNode = nullptr;
+    for (std::vector<vtkMRMLPlusServerNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
     {
-      continue;
+      if (*runningServerIt == (*serverNodeIt)->GetConfigFileName())
+      {
+        serverNode = *serverNodeIt;
+        break;
+      }
     }
 
-    serverRunning[serverNode->GetID()] = false;
-    for (std::vector<std::string>::iterator runningServerIt = runningServers.begin(); runningServerIt != runningServers.end(); ++runningServerIt)
+    if (serverNode)
     {
-      if (*runningServerIt != serverNode->GetConfigFileName())
-      {
-        continue;
-      }
       serverRunning[serverNode->GetID()] = true;
     }
+    else
+    {
+      serverNode = vtkSmartPointer<vtkMRMLPlusServerNode>::Take(vtkMRMLPlusServerNode::SafeDownCast(scene->CreateNodeByClass("vtkMRMLPlusServerNode")));
+      serverNode->SetControlledLocally(false);
+      serverNode->SetState(vtkMRMLPlusServerNode::State::On);
+      serverNode->SetConfigFileName(*runningServerIt);
+      std::string name = scene->GenerateUniqueName(*runningServerIt);
+      serverNode->SetName(name.c_str());
+      scene->AddNode(serverNode);
+      launcherNode->AddAndObserveServerNode(serverNode);
 
+    }
+  }
+
+  for (std::vector<vtkMRMLPlusServerNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
+  {
+    vtkMRMLPlusServerNode* serverNode = *serverNodeIt;
     if (serverRunning[serverNode->GetID()] &&
       serverNode->GetState() != vtkMRMLPlusServerNode::State::On &&
       serverNode->GetState() != vtkMRMLPlusServerNode::State::Stopping)
     {
       serverNode->SetState(vtkMRMLPlusServerNode::State::On);
     }
-    else if (!serverRunning[serverNode->GetID()])
+    else if (!serverRunning[serverNode->GetID()] &&
+      serverNode->GetState() == vtkMRMLPlusServerNode::State::On ||
+      serverNode->GetState() == vtkMRMLPlusServerNode::State::Stopping)
     {
-      if (serverNode->GetState() == vtkMRMLPlusServerNode::State::On ||
-        serverNode->GetState() == vtkMRMLPlusServerNode::State::Stopping)
-      {
-        serverNode->SetState(vtkMRMLPlusServerNode::State::Off);
-      }
+      serverNode->SetState(vtkMRMLPlusServerNode::State::Off);
     }
   }
 }
@@ -2138,22 +2163,26 @@ void vtkSlicerPlusRemoteLogic::UpdateServer(vtkMRMLPlusServerNode * serverNode)
     return;
   }
 
-  if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::On)
+  if (serverNode->GetControlledLocally())
   {
-    if (serverNode->GetState() == vtkMRMLPlusServerNode::State::Off)
+    // Send server start/stop commands to attempt to match states
+    if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::On)
     {
-      this->SendStartServerCommand(serverNode);
+      if (serverNode->GetState() == vtkMRMLPlusServerNode::State::Off)
+      {
+        this->SendStartServerCommand(serverNode);
+      }
+      //else if (...) // TODO: Contents of config file in Plus not the same as the one in Slicer
+      //{
+      //  this->SendStopServerCommand(serverNode);
+      //}
     }
-    //else if (...) // TODO: Contents of config file in Plus not the same as the one in Slicer
-    //{
-    //  this->SendStopServerCommand(serverNode);
-    //}
-  }
-  else if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::Off)
-  {
-    if (serverNode->GetState() == vtkMRMLPlusServerNode::State::On)
+    else if (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::Off)
     {
-      this->SendStopServerCommand(serverNode);
+      if (serverNode->GetState() == vtkMRMLPlusServerNode::State::On)
+      {
+        this->SendStopServerCommand(serverNode);
+      }
     }
   }
 
@@ -2239,29 +2268,26 @@ void vtkSlicerPlusRemoteLogic::SendStartServerCommand(vtkMRMLPlusServerNode * se
   }
 
   vtkMRMLTextNode* configFileNode = serverNode->GetConfigNode();
-  if (!configFileNode)
-  {
-    return;
-  }
-
   serverNode->SetState(vtkMRMLPlusServerNode::State::Starting);
 
   ServerCommands* command = &this->ServerCommandMap[serverNode];
   if (!command->AddConfigFile.Command->IsInProgress() || !command->StartServer.Command->IsInProgress())
   {
     std::string configFileName = serverNode->GetConfigFileName();
-
-    std::string configFileContent;
-    if (configFileNode->GetText())
+    if (configFileNode)
     {
-      configFileContent = configFileNode->GetText();
-    }
+      std::string configFileContent;
+      if (configFileNode->GetText())
+      {
+        configFileContent = configFileNode->GetText();
+      }
 
-    command->AddConfigFile.Command->SetCommandContent("<Command/>");
-    command->AddConfigFile.Command->SetCommandMetaDataElement("ConfigFileName", configFileName);
-    command->AddConfigFile.Command->SetCommandMetaDataElement("ConfigFileContent", configFileContent);
-    command->AddConfigFile.Callback->ServerNode = serverNode;
-    launcherNode->GetConnectorNode()->SendCommand(command->AddConfigFile.Command);
+      command->AddConfigFile.Command->SetCommandContent("<Command/>");
+      command->AddConfigFile.Command->SetCommandMetaDataElement("ConfigFileName", configFileName);
+      command->AddConfigFile.Command->SetCommandMetaDataElement("ConfigFileContent", configFileContent);
+      command->AddConfigFile.Callback->ServerNode = serverNode;
+      launcherNode->GetConnectorNode()->SendCommand(command->AddConfigFile.Command);
+    }
 
     std::stringstream startServerCommandText;
     startServerCommandText << "<Command>" << std::endl;
@@ -2287,12 +2313,6 @@ void vtkSlicerPlusRemoteLogic::SendStopServerCommand(vtkMRMLPlusServerNode * ser
 
   vtkMRMLIGTLConnectorNode* connectorNode = launcherNode->GetConnectorNode();
   if (!connectorNode || connectorNode->GetState() != vtkMRMLIGTLConnectorNode::StateConnected)
-  {
-    return;
-  }
-
-  vtkMRMLTextNode* configFileNode = serverNode->GetConfigNode();
-  if (!configFileNode)
   {
     return;
   }

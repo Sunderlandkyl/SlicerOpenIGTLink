@@ -69,6 +69,7 @@ public slots:
   void updateSelectedServerPanel();
 
   int getRowForServer(vtkMRMLPlusServerNode* serverNode) const;
+  vtkMRMLPlusServerNode* getServerForRow(int row) const;
 
 signals:
   /// Emitted if selection changes
