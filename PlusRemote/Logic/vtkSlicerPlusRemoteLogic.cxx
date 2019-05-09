@@ -262,6 +262,7 @@ struct ServerCommands
   ServerCommandCallback AddConfigFile;
   ServerCommandCallback StartServer;
   ServerCommandCallback StopServer;
+  ServerCommandCallback GetConfigFileContents;
   vtkNew<vtkCallbackCommand> CommandReceivedCallback;
   ServerCommands()
   {
@@ -276,6 +277,12 @@ struct ServerCommands
     this->StopServer.Command->SetTimeoutSec(1.0);
     this->StopServer.Command->SetName("StopServer");
     this->StopServer.Command->SetBlocking(false);
+
+    this->GetConfigFileContents.Command->SetCommandMetaDataElement("Separator", ";");
+    this->GetConfigFileContents.Command->SetTimeoutSec(2.0);
+    this->GetConfigFileContents.Command->SetName("GetConfigFileContents");
+    this->GetConfigFileContents.Command->SetBlocking(false);
+    this->GetConfigFileContents.Callback->SetCallback(vtkSlicerPlusRemoteLogic::onGetConfigFileContentsCompleted);
   }
 };
 
@@ -2074,7 +2081,7 @@ void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject * caller, 
     vtkSmartPointer<vtkMRMLPlusServerNode> serverNode = nullptr;
     for (std::vector<vtkMRMLPlusServerNode*>::iterator serverNodeIt = serverNodes.begin(); serverNodeIt != serverNodes.end(); ++serverNodeIt)
     {
-      if (*runningServerIt == (*serverNodeIt)->GetConfigFileName())
+      if (*runningServerIt == (*serverNodeIt)->GetServerID())
       {
         serverNode = *serverNodeIt;
         break;
@@ -2090,12 +2097,17 @@ void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject * caller, 
       serverNode = vtkSmartPointer<vtkMRMLPlusServerNode>::Take(vtkMRMLPlusServerNode::SafeDownCast(scene->CreateNodeByClass("vtkMRMLPlusServerNode")));
       serverNode->SetControlledLocally(false);
       serverNode->SetState(vtkMRMLPlusServerNode::State::On);
-      serverNode->SetConfigFileName(*runningServerIt);
       std::string name = scene->GenerateUniqueName(*runningServerIt);
       serverNode->SetName(name.c_str());
+      serverNode->SetServerID(*runningServerIt);
       scene->AddNode(serverNode);
       launcherNode->AddAndObserveServerNode(serverNode);
 
+      ServerCommands* commands = &self->ServerCommandMap[serverNode];
+      commands->GetConfigFileContents.Callback->Logic = self;
+      commands->GetConfigFileContents.Callback->ServerNode = serverNode;
+      commands->GetConfigFileContents.Command->SetCommandMetaDataElement("IDs", serverNode->GetServerID());
+      launcherNode->GetConnectorNode()->SendCommand(commands->GetConfigFileContents.Command);
     }
   }
 
@@ -2115,6 +2127,82 @@ void vtkSlicerPlusRemoteLogic::onGetRunningServersCompleted(vtkObject * caller, 
       serverNode->SetState(vtkMRMLPlusServerNode::State::Off);
     }
   }
+}
+
+//---------------------------------------------------------------------------
+void vtkSlicerPlusRemoteLogic::onGetConfigFileContentsCompleted(vtkObject * caller, unsigned long vtkNotUsed(eid), void* clientdata, void* calldata)
+{
+  igtlioCommandPointer command = igtlioCommand::SafeDownCast(caller);
+  if (!command)
+  {
+    return;
+  }
+
+  vtkPlusServerCallbackCommand* callback = static_cast<vtkPlusServerCallbackCommand*>(clientdata);
+  if (!callback)
+  {
+    return;
+  }
+
+  vtkSlicerPlusRemoteLogic* self = callback->Logic;
+  if (!self)
+  {
+    return;
+  }
+
+  vtkMRMLScene* scene = self->GetMRMLScene();
+  if (!scene)
+  {
+    return;
+  }
+
+  vtkMRMLPlusServerNode* serverNode = callback->ServerNode;
+  if (!serverNode)
+  {
+    return;
+  }
+
+  vtkMRMLPlusServerLauncherNode* launcherNode = serverNode->GetLauncherNode();
+  if (!launcherNode)
+  {
+    return;
+  }
+
+  if (command->GetStatus() != igtlioCommandStatus::CommandResponseReceived)
+  {
+    return;
+  }
+
+  int wasModifying = serverNode->StartModify();
+
+  std::string content = command->GetResponseContent();
+  vtkSmartPointer<vtkXMLDataElement> rootElement = vtkSmartPointer<vtkXMLDataElement>::Take(vtkXMLUtilities::ReadElementFromString(content.c_str()));
+  for (int i = 0; i < rootElement->GetNumberOfNestedElements(); ++i)
+  {
+    vtkSmartPointer<vtkXMLDataElement> configFileElement = rootElement->GetNestedElement(i);
+    std::string configFileName = configFileElement->GetName();
+
+    vtkMRMLTextNode* configFileNode = serverNode->GetConfigNode();
+    if (!configFileNode)
+    {
+      configFileNode = vtkMRMLTextNode::SafeDownCast(scene->AddNewNodeByClass("vtkMRMLTextNode", configFileName));
+    }
+    if (!configFileNode)
+    {
+      vtkErrorWithObjectMacro(self, "Could not find or create config file for server: " << configFileName);
+    }
+    else
+    {
+      vtkSmartPointer<vtkXMLDataElement> contentElement = configFileElement->GetNestedElement(0);
+      std::stringstream ss;
+      vtkXMLUtilities::FlattenElement(contentElement, ss);
+      std::string configFileContents = ss.str();
+      configFileNode->SetText(configFileContents.c_str());
+      serverNode->SetAndObserveConfigNode(configFileNode);
+    }
+  }
+
+  serverNode->EndModify(wasModifying);
 }
 
 //----------------------------------------------------------------------------
@@ -2273,7 +2361,9 @@ void vtkSlicerPlusRemoteLogic::SendStartServerCommand(vtkMRMLPlusServerNode * se
   ServerCommands* command = &this->ServerCommandMap[serverNode];
   if (!command->AddConfigFile.Command->IsInProgress() || !command->StartServer.Command->IsInProgress())
   {
-    std::string configFileName = serverNode->GetConfigFileName();
+    std::string configFileName = serverNode->GetServerID();
+    configFileName += ".slicer.xml";
+
     if (configFileNode)
     {
       std::string configFileContent;
@@ -2319,18 +2409,16 @@ void vtkSlicerPlusRemoteLogic::SendStopServerCommand(vtkMRMLPlusServerNode * ser
 
   serverNode->SetState(vtkMRMLPlusServerNode::State::Stopping);
 
-  std::string configFileName = serverNode->GetConfigFileName();
-
   std::stringstream startServerCommandText;
   startServerCommandText << "<Command>" << std::endl;
-  startServerCommandText << "  <ConfigFileName Value= \"" << configFileName << "\"/>" << std::endl;
+  startServerCommandText << "  <ID Value= \"" << serverNode->GetServerID() << "\"/>" << std::endl;
   startServerCommandText << "</Command>" << std::endl;
 
   ServerCommands* command = &this->ServerCommandMap[serverNode];
   if (!command->StopServer.Command->IsInProgress())
   {
     command->StopServer.Command->SetCommandContent(startServerCommandText.str());
-    command->StopServer.Command->SetCommandMetaDataElement("ConfigFileName", configFileName);
+    command->StopServer.Command->SetCommandMetaDataElement("ID", serverNode->GetServerID());
     command->StopServer.Callback->ServerNode = serverNode;
     if (launcherNode->GetConnectorNode())
     {

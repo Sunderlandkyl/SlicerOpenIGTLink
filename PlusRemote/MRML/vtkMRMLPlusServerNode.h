@@ -55,6 +55,7 @@ public:
   static const char* CONFIG_REFERENCE_ROLE;
   static const char* LAUNCHER_REFERENCE_ROLE;
   static const char* PLUS_SERVER_CONNECTOR_REFERENCE_ROLE;
+  static const char* SERVER_ID_ATTRIBUTE_NAME;
 
   static vtkMRMLPlusServerNode* New();
   vtkTypeMacro(vtkMRMLPlusServerNode, vtkMRMLNode);
@@ -101,9 +102,6 @@ public:
 
   vtkGetMacro(LogLevel, int);
   vtkSetMacro(LogLevel, int);
-
-  vtkGetMacro(ConfigFileName, std::string);
-  vtkSetMacro(ConfigFileName, std::string);
 
   vtkGetMacro(DeviceSetName, std::string);
   vtkSetMacro(DeviceSetName, std::string);
@@ -167,7 +165,6 @@ protected:
   int DesiredState;
   int State;
   int LogLevel;
-  std::string ConfigFileName;
   std::string DeviceSetName;
   std::string DeviceSetDescription;
   std::vector<PlusOpenIGTLinkServerInfo> PlusOpenIGTLinkServers;

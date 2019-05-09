@@ -34,6 +34,7 @@
 #include <vtkTimerLog.h>
 #include <vtkXMLDataElement.h>
 #include <vtkXMLUtilities.h>
+#include <vtksys/SystemTools.hxx>
 
 // STD includes
 #include <sstream>
@@ -47,6 +48,9 @@
 const char* vtkMRMLPlusServerNode::CONFIG_REFERENCE_ROLE = "configNodeRef";
 const char* vtkMRMLPlusServerNode::LAUNCHER_REFERENCE_ROLE = "launcherNodeRef";
 const char* vtkMRMLPlusServerNode::PLUS_SERVER_CONNECTOR_REFERENCE_ROLE = "plusServerConnectorNodeRef";
+
+//------------------------------------------------------------------------------
+const char* vtkMRMLPlusServerNode::SERVER_ID_ATTRIBUTE_NAME = "serverID";
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLPlusServerNode);
@@ -73,7 +77,7 @@ void vtkMRMLPlusServerNode::WriteXML(ostream& of, int nIndent)
   vtkMRMLWriteXMLBeginMacro(of);
   vtkMRMLWriteXMLEnumMacro(desiredState, DesiredState);
   vtkMRMLWriteXMLIntMacro(logLevel, LogLevel);
-  vtkMRMLWriteXMLStdStringMacro(configFileName, ConfigFileName);
+  vtkMRMLWriteXMLStdStringMacro(deviceSetDescription, DeviceSetDescription);
   vtkMRMLWriteXMLEndMacro();
 }
 
@@ -85,7 +89,7 @@ void vtkMRMLPlusServerNode::ReadXMLAttributes(const char** atts)
   vtkMRMLReadXMLBeginMacro(atts);
   vtkMRMLReadXMLEnumMacro(desiredState, DesiredState);
   vtkMRMLReadXMLIntMacro(logLevel, LogLevel);
-  vtkMRMLReadXMLStdStringMacro(configFileName, ConfigFileName);
+  vtkMRMLReadXMLStdStringMacro(deviceSetDescription, DeviceSetDescription);
   vtkMRMLReadXMLEndMacro();
   this->UpdateConfigFileInfo();
   this->EndModify(disabledModify);
@@ -101,7 +105,7 @@ void vtkMRMLPlusServerNode::Copy(vtkMRMLNode* anode)
   vtkMRMLCopyEnumMacro(State);
   vtkMRMLCopyEnumMacro(DesiredState);
   vtkMRMLCopyIntMacro(LogLevel);
-  vtkMRMLCopyStdStringMacro(ConfigFileName);
+  vtkMRMLCopyStdStringMacro(DeviceSetDescription);
   vtkMRMLCopyEndMacro();
   this->UpdateConfigFileInfo();
   this->EndModify(disabledModify);
@@ -115,7 +119,7 @@ void vtkMRMLPlusServerNode::PrintSelf(ostream& os, vtkIndent indent)
   vtkMRMLPrintEnumMacro(DesiredState)
   vtkMRMLPrintEnumMacro(State);
   vtkMRMLPrintIntMacro(LogLevel);
-  vtkMRMLPrintStdStringMacro(ConfigFileName);
+  vtkMRMLPrintStdStringMacro(DeviceSetDescription);
   vtkMRMLPrintEndMacro();
 }
 
@@ -180,34 +184,6 @@ vtkMRMLTextNode* vtkMRMLPlusServerNode::GetConfigNode()
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLPlusServerNode::UpdateConfigFileInfo()
-{
-  int wasModifying = this->StartModify();
-
-  vtkMRMLTextNode* configFileNode = this->GetConfigNode();
-  if (configFileNode)
-  {
-    std::stringstream ss;
-    ss << configFileNode->GetName();
-    ss << ".slicer.xml";
-    this->SetConfigFileName(ss.str());
-  }
-
-  std::string content;
-  if (configFileNode && configFileNode->GetText())
-  {
-    content = configFileNode->GetText();
-  }
-
-  vtkMRMLPlusServerNode::PlusConfigFileInfo configInfo = vtkMRMLPlusServerNode::GetPlusConfigFileInfo(content);
-  this->SetDeviceSetName(configInfo.Name);
-  this->SetDeviceSetDescription(configInfo.Description);
-  this->PlusOpenIGTLinkServers = configInfo.Servers;
-
-  this->EndModify(wasModifying);
-}
-
-//----------------------------------------------------------------------------
 void vtkMRMLPlusServerNode::SetAndObserveConfigNode(vtkMRMLTextNode* configFileNode)
 {
   this->SetNodeReferenceID(CONFIG_REFERENCE_ROLE, (configFileNode ? configFileNode->GetID() : NULL));
@@ -253,6 +229,44 @@ void vtkMRMLPlusServerNode::StartServer()
 void vtkMRMLPlusServerNode::StopServer()
 {
   this->SetDesiredState(State::Off);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLPlusServerNode::UpdateConfigFileInfo()
+{
+  int wasModifying = this->StartModify();
+
+  vtkMRMLTextNode* configFileNode = this->GetConfigNode();
+  if (!configFileNode)
+  {
+    return;
+  }
+
+  if (configFileNode->GetAttribute(SERVER_ID_ATTRIBUTE_NAME))
+  {
+    this->SetServerID(configFileNode->GetAttribute(SERVER_ID_ATTRIBUTE_NAME));
+  }
+  else
+  {
+    if (this->ServerID.empty())
+    {
+      this->SetServerID(configFileNode->GetName());
+    }
+    configFileNode->SetAttribute(SERVER_ID_ATTRIBUTE_NAME, this->ServerID.c_str());
+  }
+
+  std::string content;
+  if (configFileNode && configFileNode->GetText())
+  {
+    content = configFileNode->GetText();
+  }
+
+  vtkMRMLPlusServerNode::PlusConfigFileInfo configInfo = vtkMRMLPlusServerNode::GetPlusConfigFileInfo(content);
+  this->SetDeviceSetName(configInfo.Name);
+  this->SetDeviceSetDescription(configInfo.Description);
+  this->PlusOpenIGTLinkServers = configInfo.Servers;
+
+  this->EndModify(wasModifying);
 }
 
 //----------------------------------------------------------------------------

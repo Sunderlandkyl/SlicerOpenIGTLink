@@ -106,22 +106,15 @@ void qMRMLPlusServerLauncherTableViewPrivate::init()
   this->ColumnLabels[ServerColumns::State] = "State";
   this->PlusServerLauncherTable->setHorizontalHeaderLabels(this->ColumnLabels);
   this->PlusServerLauncherTable->setColumnCount(this->ColumnLabels.size());
-  for (int i = 0; i < this->ColumnLabels.size(); ++i)
-  {
-    if (i == ServerColumns::Name)
-    {
-      this->PlusServerLauncherTable->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Stretch);
-    }
-    else
-    {
-      this->PlusServerLauncherTable->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Fixed);
-    }
-  }
+  this->PlusServerLauncherTable->horizontalHeader()->setSectionResizeMode(ServerColumns::ID, QHeaderView::Interactive);
+  this->PlusServerLauncherTable->horizontalHeader()->setSectionResizeMode(ServerColumns::Name, QHeaderView::Stretch);
+  this->PlusServerLauncherTable->horizontalHeader()->setSectionResizeMode(ServerColumns::State, QHeaderView::ResizeToContents);
 
   // Select rows
   this->PlusServerLauncherTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
   // Make connections
+  QObject::connect(this->ShowRemoteCheckBox, SIGNAL(clicked()), q, SLOT(updateWidgetFromLauncherMRML()));
   QObject::connect(this->PlusServerLauncherTable, SIGNAL(itemSelectionChanged()), q, SLOT(updateSelectedServerPanel()));
   QObject::connect(this->AddServerButton, SIGNAL(clicked()), q, SLOT(onAddServer()));
   QObject::connect(this->RemoveServerButton, SIGNAL(clicked()), q, SLOT(onRemoveServer()));
@@ -176,7 +169,6 @@ void qMRMLPlusServerLauncherTableView::setLauncherNode(vtkMRMLNode* node)
     for (std::vector<vtkMRMLPlusServerNode*>::iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt)
     {
       vtkMRMLPlusServerNode* serverNode = (*serverIt);
-      serverNode->UpdateConfigFileInfo();
       qvtkConnect(serverNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromServerMRML(vtkObject*, void*)));
     }
   }
@@ -201,6 +193,7 @@ void qMRMLPlusServerLauncherTableView::updateWidgetFromLauncherMRML()
   // Clear table
   bool tableWasBlocking = d->PlusServerLauncherTable->blockSignals(true);
   d->PlusServerLauncherTable->clearContents();
+  d->PlusServerLauncherTable->setRowCount(0);
   d->PlusServerLauncherTable->blockSignals(tableWasBlocking);
 
   // Disable widgets if no launcher is selected
@@ -210,9 +203,10 @@ void qMRMLPlusServerLauncherTableView::updateWidgetFromLauncherMRML()
   d->ConfigFileComboBox->setEnabled(d->LauncherNode);
   if (!d->LauncherNode)
   {
+    this->updateSelectedServerPanel();
     return;
   }
-  
+
   // Keep track of the selected node so that it can be reselected after the table is rebuilt
   vtkMRMLPlusServerNode* selectedServerNode = this->getSelectedServer();
 
@@ -222,22 +216,30 @@ void qMRMLPlusServerLauncherTableView::updateWidgetFromLauncherMRML()
   // Populate the table with the server nodes connected to the current launcher
   std::vector<vtkMRMLPlusServerNode*> serverNodes = d->LauncherNode->GetServerNodes();
   int numberOfNodes = serverNodes.size();
-  d->PlusServerLauncherTable->setRowCount(numberOfNodes);
+
   for (int i = 0; i < numberOfNodes; ++i)
   {
     vtkMRMLPlusServerNode* serverNode = serverNodes[i];
+    if (!d->ShowRemoteCheckBox->isChecked() && !serverNode->GetControlledLocally())
+    {
+      continue;
+    }
+
+    int row = d->PlusServerLauncherTable->rowCount();
+    d->PlusServerLauncherTable->insertRow(d->PlusServerLauncherTable->rowCount());
+
     for (int j = 0; j < ServerColumns::LastColumn; ++j)
     {
       QTableWidgetItem* item = new QTableWidgetItem();
       item->setData(ItemTypeServerNodeId, serverNode->GetID());
       item->setFlags(item->flags() & ~Qt::ItemIsEditable);
-      d->PlusServerLauncherTable->setItem(i, j, item);
+      d->PlusServerLauncherTable->setItem(row, j, item);
     }
 
     QPushButton* startStopButton = new QPushButton(this);
     startStopButton->setCheckable(true);
     QObject::connect(startStopButton, SIGNAL(clicked()), this, SLOT(onStartStopServer()));
-    d->PlusServerLauncherTable->setCellWidget(i, ServerColumns::State, startStopButton);
+    d->PlusServerLauncherTable->setCellWidget(row, ServerColumns::State, startStopButton);
 
     this->updateWidgetFromServerMRML(serverNode);
   }
@@ -265,9 +267,14 @@ void qMRMLPlusServerLauncherTableView::updateWidgetFromServerMRML(vtkObject* cal
   if (serverNode)
   {
     int row = this->getRowForServer(serverNode);
+    if (row == -1)
+    {
+      return;
+    }
+
     QTableWidgetItem* serverTableItem;
 
-    std::string id = serverNode->GetName(); //TODO: unique server identifier
+    std::string id = serverNode->GetServerID(); //TODO: unique server identifier
     d->PlusServerLauncherTable->item(row, ServerColumns::ID)->setText(id.c_str());
 
     std::string name = serverNode->GetDeviceSetName();
@@ -284,15 +291,19 @@ void qMRMLPlusServerLauncherTableView::updateWidgetFromServerMRML(vtkObject* cal
     {
     case vtkMRMLPlusServerNode::State::On:
       startStopButton->setIcon(d->IconOn);
+      startStopButton->setToolTip("Server running");
       break;
     case vtkMRMLPlusServerNode::State::Off:
       startStopButton->setIcon(d->IconOff);
+      startStopButton->setToolTip("Server not running");
       break;
     case vtkMRMLPlusServerNode::State::Starting:
       startStopButton->setIcon(d->IconStarting);
+      startStopButton->setToolTip("Server starting");
       break;
     case vtkMRMLPlusServerNode::State::Stopping:
       startStopButton->setIcon(d->IconStopping);
+      startStopButton->setToolTip("Server stopping");
       break;
     }
   }
@@ -334,11 +345,15 @@ int qMRMLPlusServerLauncherTableView::getRowForServer(vtkMRMLPlusServerNode* ser
 
   for (int i = 0; i < d->PlusServerLauncherTable->rowCount(); ++i)
   {
-    QVariant rowData = d->PlusServerLauncherTable->item(i, 0)->data(ItemTypeServerNodeId);
-    QString rowString = rowData.toString();
-    if (rowData == serverNode->GetID())
+    QTableWidgetItem* item = d->PlusServerLauncherTable->item(i, 0);
+    if (item)
     {
-      return i;
+      QVariant rowData = item->data(ItemTypeServerNodeId);
+      QString rowString = rowData.toString();
+      if (rowData == serverNode->GetID())
+      {
+        return i;
+      }
     }
   }
   return -1;
@@ -367,7 +382,6 @@ vtkMRMLPlusServerNode* qMRMLPlusServerLauncherTableView::getServerForRow(int row
 vtkMRMLPlusServerNode* qMRMLPlusServerLauncherTableView::getSelectedServer()
 {
   Q_D(qMRMLPlusServerLauncherTableView);
-
   int row = -1;
 
   QList<QTableWidgetSelectionRange> ranges = d->PlusServerLauncherTable->selectedRanges();
@@ -413,18 +427,14 @@ void qMRMLPlusServerLauncherTableView::updateSelectedServerPanel()
       configFileNodeID = configFileNode->GetID();
     }
 
-    d->ConfigFileComboBox->setEnabled(serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::Off &&
-      serverNode->GetState() == vtkMRMLPlusServerNode::State::Off);
-
     std::string description = serverNode->GetDeviceSetDescription();
     d->DescriptionTextEdit->setText(description.c_str());
     d->LocalControlCheckBox->setChecked(serverNode->GetControlledLocally());
 
-    d->DescriptionTextEdit->setEnabled(configFileNode);
-
-    d->ConfigFileComboBox->setEnabled(serverNode->GetControlledLocally());
-    d->LogLevelComboBox->setEnabled(serverNode->GetControlledLocally());
-    d->DescriptionTextEdit->setEnabled(serverNode->GetControlledLocally());
+    d->ConfigFileComboBox->setEnabled(!serverNode->GetControlledLocally() || (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::Off &&
+      serverNode->GetState() == vtkMRMLPlusServerNode::State::Off));
+    d->LogLevelComboBox->setEnabled(!serverNode->GetControlledLocally() || (serverNode->GetDesiredState() == vtkMRMLPlusServerNode::State::Off &&
+      serverNode->GetState() == vtkMRMLPlusServerNode::State::Off));
   }
   else
   {

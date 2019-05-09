@@ -137,6 +137,7 @@ public:
   void UpdateServer(vtkMRMLPlusServerNode* serverNode);
   void UpdatePlusOpenIGTLinkConnectors(vtkMRMLPlusServerNode* serverNode);
   static void onGetRunningServersCompleted(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
+  static void onGetConfigFileContentsCompleted(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
   static void onLauncherCommandReceived(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
 
   ///////////////////////

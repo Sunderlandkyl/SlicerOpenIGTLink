@@ -105,11 +105,14 @@ bool qSlicerPlusConfigFileReader::load(const IOProperties& properties)
   std::string launcherNodeID = properties["launcherNodeID"].toString().toStdString();
 
   std::string textNodeName = vtksys::SystemTools::GetFilenameWithoutExtension(fileName);
+  textNodeName = this->mrmlScene()->GetUniqueNameByString(textNodeName.c_str());
   vtkSmartPointer<vtkMRMLTextNode> textNode = vtkMRMLTextNode::SafeDownCast(this->mrmlScene()->AddNewNodeByClass("vtkMRMLTextNode", textNodeName));
   if (!textNode)
   {
     return false;
   }
+  textNodeName = textNode->GetName();
+  textNode->SetAttribute(vtkMRMLPlusServerNode::SERVER_ID_ATTRIBUTE_NAME, textNodeName.c_str());
 
   vtkSmartPointer<vtkMRMLTextStorageNode> storageNode = vtkMRMLTextStorageNode::SafeDownCast(this->mrmlScene()->AddNewNodeByClass("vtkMRMLTextStorageNode"));
   if (!storageNode)
@@ -127,7 +130,7 @@ bool qSlicerPlusConfigFileReader::load(const IOProperties& properties)
   vtkSmartPointer<vtkMRMLPlusServerNode> serverNode = nullptr;
   if (success)
   {
-    serverNode = vtkMRMLPlusServerNode::SafeDownCast(this->mrmlScene()->AddNewNodeByClass("vtkMRMLPlusServerNode"));
+    serverNode = vtkMRMLPlusServerNode::SafeDownCast(this->mrmlScene()->AddNewNodeByClass("vtkMRMLPlusServerNode", textNodeName+"_Server"));
     if (serverNode)
     {
       serverNode->SetAndObserveConfigNode(textNode);
