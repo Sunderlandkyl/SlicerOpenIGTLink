@@ -52,6 +52,11 @@ void qSlicerIGTLConnectorPropertyWidgetPrivate::init()
   QObject::connect(this->UseStreamingVolumeCheckBox, SIGNAL(toggled(bool)),
                    q, SLOT(updateIGTLConnectorNode()));
 
+  this->HeaderVersionSelector->addItem(QString::number(IGTL_HEADER_VERSION_1), IGTL_HEADER_VERSION_1);
+  this->HeaderVersionSelector->addItem(QString::number(IGTL_HEADER_VERSION_2), IGTL_HEADER_VERSION_2);
+  QObject::connect(this->HeaderVersionSelector, &QComboBox::currentTextChanged,
+                   q, &qSlicerIGTLConnectorPropertyWidget::updateIGTLConnectorNode);
+
   this->ConnectorNotDefinedRadioButton->setVisible(false);
   this->ConnectorTypeButtonGroup.addButton(this->ConnectorNotDefinedRadioButton, vtkMRMLIGTLConnectorNode::TypeNotDefined);
   this->ConnectorTypeButtonGroup.addButton(this->ConnectorServerRadioButton, vtkMRMLIGTLConnectorNode::TypeServer);
@@ -178,6 +183,9 @@ void qSlicerIGTLConnectorPropertyWidget::onMRMLNodeModified()
   }
   d->ConnectorStateCheckBox->setChecked(!deactivated);
   d->PersistentStateCheckBox->setChecked(d->IGTLConnectorNode->GetPersistent());
+  bool wasBlocking = d->HeaderVersionSelector->blockSignals(true);
+  d->HeaderVersionSelector->setCurrentText(QString::number(d->IGTLConnectorNode->GetHeaderVersion()));
+  d->HeaderVersionSelector->blockSignals(wasBlocking);
 }
 
 //------------------------------------------------------------------------------
@@ -201,13 +209,13 @@ void qSlicerIGTLConnectorPropertyWidget::updateIGTLConnectorNode()
   Q_D(qSlicerIGTLConnectorPropertyWidget);
 
   d->IGTLConnectorNode->DisableModifiedEventOn();
-
   d->IGTLConnectorNode->SetName(d->ConnectorNameEdit->text().toLatin1());
   d->IGTLConnectorNode->SetType(d->ConnectorTypeButtonGroup.checkedId());
   d->IGTLConnectorNode->SetServerHostname(d->ConnectorHostNameEdit->text().toStdString());
   d->IGTLConnectorNode->SetServerPort(d->ConnectorPortEdit->text().toInt());
   d->IGTLConnectorNode->SetPersistent(d->PersistentStateCheckBox->isChecked());
   d->IGTLConnectorNode->SetUseStreamingVolume(d->UseStreamingVolumeCheckBox->isChecked());
+  d->IGTLConnectorNode->SetHeaderVersion(d->HeaderVersionSelector->currentData().toInt());
   d->IGTLConnectorNode->DisableModifiedEventOff();
   d->IGTLConnectorNode->InvokePendingModifiedEvent();
 }
