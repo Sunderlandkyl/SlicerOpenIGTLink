@@ -7,6 +7,8 @@
 #include <igtlioDevice.h>
 
 // IF module includes
+#include "vtkIGTLIOConverterFactory.h"
+#include "vtkIGTLToMRMLImage.h"
 #include "vtkMRMLIGTLConnectorNode.h"
 
 // VTK includes
@@ -71,6 +73,9 @@ protected:
 
 int vtkMRMLConnectorImageSendAndReceiveTest(int argc, char* argv [])
 {
+  // Converters are normally registered by the module logic; the test links only the MRML library.
+  vtkIGTLIOConverterFactory::GetInstance()->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLImage>::New());
+
   vtkSmartPointer<vtkMRMLScene> scene = vtkMRMLScene::New();
   // Setup the Server and client, as well as the event observers.
   vtkMRMLIGTLConnectorNode* serverConnectorNode = vtkMRMLIGTLConnectorNode::New();

@@ -25,6 +25,19 @@
 #include "vtkMRMLIGTLQueryNode.h"
 #include "vtkMRMLIGTLStatusNode.h"
 #include "vtkMRMLIGTLSensorNode.h"
+#include "vtkIGTLIOConverterFactory.h"
+#include "vtkIGTLToMRMLImage.h"
+#include "vtkIGTLToMRMLTransform.h"
+#include "vtkIGTLToMRMLStatus.h"
+#include "vtkIGTLToMRMLPolyData.h"
+#include "vtkIGTLToMRMLString.h"
+#include "vtkIGTLToMRMLPoint.h"
+#include "vtkIGTLToMRMLImageMeta.h"
+#include "vtkIGTLToMRMLLabelMeta.h"
+#include "vtkIGTLToMRMLTrackingData.h"
+#if defined(OpenIGTLink_ENABLE_VIDEOSTREAMING)
+#include "vtkIGTLToMRMLVideo.h"
+#endif
 
 // OpenIGTLinkIO Device includes
 #include "igtlioDevice.h"
@@ -193,6 +206,20 @@ void vtkSlicerOpenIGTLinkIFLogic::RegisterNodes()
   vtkStreamingVolumeCodecFactory* codecFactory = vtkStreamingVolumeCodecFactory::GetInstance();
 #if defined(OpenIGTLink_USE_VP9)
   codecFactory->RegisterStreamingCodec(vtkSmartPointer<vtkIGTLVP9VolumeCodec>::New());
+#endif
+
+  vtkIGTLIOConverterFactory* converterFactory = vtkIGTLIOConverterFactory::GetInstance();
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLImage>::New());
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLTransform>::New());
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLStatus>::New());
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLPolyData>::New());
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLString>::New());
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLPoint>::New());
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLImageMeta>::New());
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLLabelMeta>::New());
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLTrackingData>::New());
+#if defined(OpenIGTLink_ENABLE_VIDEOSTREAMING)
+  converterFactory->RegisterConverter(vtkSmartPointer<vtkIGTLToMRMLVideo>::New());
 #endif
 }
 
