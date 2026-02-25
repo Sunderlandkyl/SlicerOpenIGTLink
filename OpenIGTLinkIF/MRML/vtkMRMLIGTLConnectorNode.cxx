@@ -67,7 +67,6 @@ Version:   $Revision: 1.2 $
 // vtksys includes
 #include <vtksys/SystemTools.hxx>
 
-#define MRMLNodeNameKey "MRMLNodeName"
 #define OriginalNodeNameKey "OriginalNodeName"
 
 // The macro SendMessage in winuser.h clashes with the method name in igtlioConnector.
@@ -209,13 +208,6 @@ void vtkMRMLIGTLConnectorNode::ProcessIncomingDeviceModifiedEvent(
   if (converter)
   {
     converter->DeviceToMRML(modifiedDevice, modifiedNode, this);
-
-    // copy metadata from igtl message to MRML node
-    for (igtl::MessageBase::MetaDataMap::const_iterator iter = modifiedDevice->GetMetaData().begin(); iter != modifiedDevice->GetMetaData().end(); ++iter)
-    {
-      std::string tag = "OpenIGTLink." + iter->first;
-      modifiedNode->SetAttribute(tag.c_str(), iter->second.second.c_str());
-    }
   }
 
   vtkMRMLIGTLQueryNode* queryNode = this->Internal->GetPendingQueryNodeForDevice(modifiedDevice);
@@ -1369,42 +1361,21 @@ int vtkMRMLIGTLConnectorNode::PushNode(vtkMRMLNode* node)
   igtlioDeviceKeyType key;
   key.name = device->GetDeviceName();
   key.type = device->GetDeviceType();
+  vtkIGTLToMRMLBase* converter = vtkIGTLIOConverterFactory::GetInstance()->GetConverter(key.type);
+  if (!converter)
+  {
+    vtkErrorMacro("PushNode: no converter registered for device type " << key.type << ", node " << node->GetID());
+    return 0;
+  }
+
   device->ClearMetaData();
   if (this->OutgoingMessageHeaderVersionMaximum < 0 || this->OutgoingMessageHeaderVersionMaximum >= IGTL_HEADER_VERSION_2)
   {
-    device->SetMetaDataElement(MRMLNodeNameKey, IANA_TYPE_US_ASCII, node->GetNodeTagName());
-    if (node->IsA("vtkMRMLTransformNode"))
-    {
-      const char* transformStatusAttribute = node->GetAttribute("TransformStatus");
-      if (transformStatusAttribute)
-      {
-        device->SetMetaDataElement("TransformStatus", transformStatusAttribute);
-      }
-      else
-      {
-        // If no transform status is specified, the transform node is assumed to be valid.
-        // Transform status should be set to "OK", rather than "UNKNOWN" to reflect this.
-        device->SetMetaDataElement("TransformStatus", "OK");
-      }
-    }
-    else
-    {
-      const char* statusAttribute = node->GetAttribute("Status");
-      if (statusAttribute)
-      {
-        device->SetMetaDataElement("Status", statusAttribute);
-      }
-      else
-      {
-        // If no status is specified, the node is assumed to be valid.
-        // Status should be set to "OK", rather than "UNKNOWN" to reflect this.
-        device->SetMetaDataElement("Status", "OK");
-      }
-    }
+    converter->PrepareOutgoingDevice(node, device);
   }
 
   device->RemoveObservers(device->GetDeviceContentModifiedEvent());
-  this->AssignOutGoingNodeToDevice(node, device); // update the device content
+  converter->MRMLToDevice(node, device); // update the device content
   device->AddObserver(device->GetDeviceContentModifiedEvent(), this, &vtkMRMLIGTLConnectorNode::ProcessIODeviceEvents);
 
 
@@ -1427,14 +1398,7 @@ int vtkMRMLIGTLConnectorNode::PushNode(vtkMRMLNode* node)
       continue;
     }
 
-    if ((strcmp(node->GetClassName(), "vtkMRMLIGTLQueryNode") != 0))
-    {
-      this->Internal->IOConnector->SendMessage(key, igtlioDevice::MESSAGE_PREFIX_NOT_DEFINED, clientID);
-    }
-    else if (strcmp(node->GetClassName(), "vtkMRMLIGTLQueryNode") == 0)
-    {
-      this->Internal->IOConnector->SendMessage(key, device->MESSAGE_PREFIX_RTS, clientID);
-    }
+    this->Internal->IOConnector->SendMessage(key, igtlioDevice::MESSAGE_PREFIX_NOT_DEFINED, clientID);
   }
 
   return 0;

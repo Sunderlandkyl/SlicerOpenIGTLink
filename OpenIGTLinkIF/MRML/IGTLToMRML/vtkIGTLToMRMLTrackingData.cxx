@@ -83,7 +83,7 @@ vtkMRMLNode* vtkIGTLToMRMLTrackingData::CreateNode(vtkMRMLScene* scene,
 }
 
 //----------------------------------------------------------------------------
-void vtkIGTLToMRMLTrackingData::DeviceToMRML(igtlioDevice* device,
+void vtkIGTLToMRMLTrackingData::DeviceToMRMLInternal(igtlioDevice* device,
                                                vtkMRMLNode* node,
                                                vtkMRMLIGTLConnectorNode* vtkNotUsed(connector))
 {

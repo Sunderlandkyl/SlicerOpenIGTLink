@@ -32,8 +32,6 @@
 #include <vtkObjectFactory.h>
 #include <vtkPolyData.h>
 
-#define MRMLNodeNameKey "MRMLNodeName"
-
 vtkStandardNewMacro(vtkIGTLToMRMLPolyData);
 
 //----------------------------------------------------------------------------
@@ -87,7 +85,7 @@ vtkMRMLNode* vtkIGTLToMRMLPolyData::CreateNode(vtkMRMLScene* scene,
 }
 
 //----------------------------------------------------------------------------
-void vtkIGTLToMRMLPolyData::DeviceToMRML(igtlioDevice* device,
+void vtkIGTLToMRMLPolyData::DeviceToMRMLInternal(igtlioDevice* device,
                                            vtkMRMLNode* node,
                                            vtkMRMLIGTLConnectorNode* vtkNotUsed(connector))
 {

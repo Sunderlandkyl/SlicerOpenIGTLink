@@ -32,8 +32,9 @@ public:
   std::string GetIGTLDeviceType() const override { return "TRANSFORM"; }
   std::vector<std::string> GetMRMLNodeTagNames() override;
   vtkMRMLNode* CreateNode(vtkMRMLScene* scene, igtlioDevice* device, vtkMRMLIGTLConnectorNode* connector) override;
-  void DeviceToMRML(igtlioDevice* device, vtkMRMLNode* node, vtkMRMLIGTLConnectorNode* connector) override;
+  void DeviceToMRMLInternal(igtlioDevice* device, vtkMRMLNode* node, vtkMRMLIGTLConnectorNode* connector) override;
   unsigned int MRMLToDevice(vtkMRMLNode* node, igtlioDevice* device) override;
+  const char* GetStatusMetaDataKey() const override { return "TransformStatus"; }
 
 protected:
   vtkIGTLToMRMLTransform() = default;

@@ -18,8 +18,16 @@
 
 #include "vtkIGTLToMRMLBase.h"
 
+// OpenIGTLinkIO includes
+#include <igtlioDevice.h>
+
+// MRML includes
+#include <vtkMRMLNode.h>
+
 // VTK includes
 #include <vtkObjectFactory.h>
+
+const char* const vtkIGTLToMRMLBase::MRMLNodeNameKey = "MRMLNodeName";
 
 //----------------------------------------------------------------------------
 vtkIGTLToMRMLBase::vtkIGTLToMRMLBase()
@@ -36,4 +44,35 @@ void vtkIGTLToMRMLBase::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "IGTLDeviceType: " << this->GetIGTLDeviceType() << "\n";
+}
+
+//----------------------------------------------------------------------------
+void vtkIGTLToMRMLBase::DeviceToMRML(igtlioDevice* device,
+                                      vtkMRMLNode* node,
+                                      vtkMRMLIGTLConnectorNode* connector)
+{
+  this->DeviceToMRMLInternal(device, node, connector);
+  this->CopyMetaDataToMRMLNode(device, node);
+}
+
+//----------------------------------------------------------------------------
+void vtkIGTLToMRMLBase::CopyMetaDataToMRMLNode(igtlioDevice* device, vtkMRMLNode* node)
+{
+  for (igtl::MessageBase::MetaDataMap::const_iterator iter = device->GetMetaData().begin();
+       iter != device->GetMetaData().end(); ++iter)
+  {
+    std::string tag = "OpenIGTLink." + iter->first;
+    node->SetAttribute(tag.c_str(), iter->second.second.c_str());
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkIGTLToMRMLBase::PrepareOutgoingDevice(vtkMRMLNode* node, igtlioDevice* device)
+{
+  device->SetMetaDataElement(MRMLNodeNameKey, IANA_TYPE_US_ASCII, node->GetNodeTagName());
+  // If no status is specified, the node is assumed to be valid.
+  // Status should be set to "OK", rather than "UNKNOWN" to reflect this.
+  const char* statusKey = this->GetStatusMetaDataKey();
+  const char* status = node->GetAttribute(statusKey);
+  device->SetMetaDataElement(statusKey, status ? status : "OK");
 }

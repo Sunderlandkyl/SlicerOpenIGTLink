@@ -61,10 +61,11 @@ public:
                                   igtlioDevice* device,
                                   vtkMRMLIGTLConnectorNode* connector) = 0;
 
-  /// Copy data from the incoming device into the already-existing MRML node.
+  /// Copy data from the incoming device into the already-existing MRML node,
+  /// then copy all IGTL metadata entries as "OpenIGTLink.<key>" node attributes.
   virtual void DeviceToMRML(igtlioDevice* device,
-                             vtkMRMLNode* node,
-                             vtkMRMLIGTLConnectorNode* connector) = 0;
+                    vtkMRMLNode* node,
+                    vtkMRMLIGTLConnectorNode* connector);
 
   /// Populate the outgoing device from the MRML node.
   /// Returns the VTK event ID that, when fired by the node, should trigger
@@ -72,7 +73,30 @@ public:
   /// Returns 0 if this converter/device combination is not meant to be pushed.
   virtual unsigned int MRMLToDevice(vtkMRMLNode* node, igtlioDevice* device) = 0;
 
+  /// Set metadata on an outgoing device before sending. Called by PushNode
+  /// when the message header version supports metadata (>= IGTL v2).
+  /// Default sets MRMLNodeNameKey to the node tag name and GetStatusMetaDataKey()
+  /// to the node attribute of the same name, or "OK" when the attribute is absent.
+  /// Override to replace or extend.
+  virtual void PrepareOutgoingDevice(vtkMRMLNode* node, igtlioDevice* device);
+
+  /// Name of the metadata element (and the MRML node attribute it is read from)
+  /// that carries the node's status. Default is "Status"; Transform uses "TransformStatus".
+  virtual const char* GetStatusMetaDataKey() const { return "Status"; }
+
+  /// Metadata key used to carry the MRML node type name across the wire.
+  static const char* const MRMLNodeNameKey;
+
 protected:
+  /// Device-type-specific data transfer. Called by DeviceToMRML before metadata copy.
+  virtual void DeviceToMRMLInternal(igtlioDevice* device,
+                                    vtkMRMLNode* node,
+                                    vtkMRMLIGTLConnectorNode* connector) = 0;
+
+  /// Copy all IGTL metadata entries from device to MRML node attributes
+  /// prefixed with "OpenIGTLink.".
+  static void CopyMetaDataToMRMLNode(igtlioDevice* device, vtkMRMLNode* node);
+
   vtkIGTLToMRMLBase();
   ~vtkIGTLToMRMLBase() override;
 

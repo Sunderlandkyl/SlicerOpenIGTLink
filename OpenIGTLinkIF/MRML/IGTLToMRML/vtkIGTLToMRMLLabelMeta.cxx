@@ -85,7 +85,7 @@ vtkMRMLNode* vtkIGTLToMRMLLabelMeta::CreateNode(vtkMRMLScene* scene,
 }
 
 //----------------------------------------------------------------------------
-void vtkIGTLToMRMLLabelMeta::DeviceToMRML(igtlioDevice* device,
+void vtkIGTLToMRMLLabelMeta::DeviceToMRMLInternal(igtlioDevice* device,
                                             vtkMRMLNode* node,
                                             vtkMRMLIGTLConnectorNode* vtkNotUsed(connector))
 {

@@ -67,7 +67,7 @@ vtkMRMLNode* vtkIGTLToMRMLPoint::CreateNode(vtkMRMLScene* scene,
 }
 
 //----------------------------------------------------------------------------
-void vtkIGTLToMRMLPoint::DeviceToMRML(igtlioDevice* device,
+void vtkIGTLToMRMLPoint::DeviceToMRMLInternal(igtlioDevice* device,
                                         vtkMRMLNode* node,
                                         vtkMRMLIGTLConnectorNode* vtkNotUsed(connector))
 {
