@@ -39,6 +39,7 @@
 
 // std includes
 #include <list>
+#include <mutex>
 
 class vtkMRMLIGTLQueryNode;
 class vtkSlicerOpenIGTLinkCommand;
@@ -298,8 +299,6 @@ public:
   virtual void OnNodeReferenceAdded(vtkMRMLNodeReference* reference) override;
 
   virtual void OnNodeReferenceRemoved(vtkMRMLNodeReference* reference) override;
-
-  virtual void OnNodeReferenceModified(vtkMRMLNodeReference* reference) override;
   //ETX
 #endif // __VTK_WRAP__
 

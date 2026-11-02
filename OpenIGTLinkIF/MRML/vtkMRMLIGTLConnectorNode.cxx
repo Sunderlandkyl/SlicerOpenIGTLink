@@ -67,6 +67,9 @@ Version:   $Revision: 1.2 $
 // vtksys includes
 #include <vtksys/SystemTools.hxx>
 
+// std includes
+#include <mutex>
+
 #define OriginalNodeNameKey "OriginalNodeName"
 
 // The macro SendMessage in winuser.h clashes with the method name in igtlioConnector.
@@ -344,27 +347,27 @@ void vtkMRMLIGTLConnectorNode::vtkInternal::ReceiveCommandResponse(igtlioCommand
 vtkMRMLIGTLQueryNode* vtkMRMLIGTLConnectorNode::vtkInternal::GetPendingQueryNodeForDevice(igtlioDevice* device)
 {
   vtkMRMLIGTLQueryNode* queryNode = nullptr;
-  this->External->QueryQueueMutex.lock();
-  for (QueryListType::iterator igtlQueryIt = this->External->QueryWaitingQueue.begin();
-    igtlQueryIt != this->External->QueryWaitingQueue.end(); ++igtlQueryIt)
   {
-    vtkMRMLIGTLQueryNode* currentQueryNode = *igtlQueryIt;
-    if (currentQueryNode && currentQueryNode->GetIGTLName() == device->GetDeviceType() &&
-      (!currentQueryNode->GetIGTLDeviceName() || !currentQueryNode->GetIGTLDeviceName()[0] || currentQueryNode->GetIGTLDeviceName() == device->GetDeviceName()))
+    std::lock_guard<std::mutex> lock(this->External->QueryQueueMutex);
+    for (QueryListType::iterator igtlQueryIt = this->External->QueryWaitingQueue.begin();
+      igtlQueryIt != this->External->QueryWaitingQueue.end(); ++igtlQueryIt)
     {
-      queryNode = currentQueryNode;
-      break;
+      vtkMRMLIGTLQueryNode* currentQueryNode = *igtlQueryIt;
+      if (currentQueryNode && currentQueryNode->GetIGTLName() == device->GetDeviceType() &&
+        (!currentQueryNode->GetIGTLDeviceName() || !currentQueryNode->GetIGTLDeviceName()[0] || currentQueryNode->GetIGTLDeviceName() == device->GetDeviceName()))
+      {
+        queryNode = currentQueryNode;
+        break;
+      }
     }
   }
-  this->External->QueryQueueMutex.unlock();
-
   return queryNode;
 }
 
 //----------------------------------------------------------------------------
 bool vtkMRMLIGTLConnectorNode::vtkInternal::RemovePendingQueryNode(vtkMRMLIGTLQueryNode* queryNode)
 {
-  this->External->QueryQueueMutex.lock();
+  std::lock_guard<std::mutex> lock(this->External->QueryQueueMutex);
   QueryListType::iterator queryIt = std::find(this->External->QueryWaitingQueue.begin(), this->External->QueryWaitingQueue.end(), queryNode);
   if (queryIt == this->External->QueryWaitingQueue.end())
   {
@@ -372,49 +375,64 @@ bool vtkMRMLIGTLConnectorNode::vtkInternal::RemovePendingQueryNode(vtkMRMLIGTLQu
     return false;
   }
   this->External->QueryWaitingQueue.erase(queryIt);
-  this->External->QueryQueueMutex.unlock();
   return true;
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLIGTLConnectorNode::vtkInternal::RemoveExpiredQueries()
 {
+  // Queries that are no longer pending and must be dropped from the queue.
+  QueryListType finishedQueries;
+  // Queries that have exceeded their timeout and must additionally be marked expired.
   QueryListType expiredQueries;
-  this->External->QueryQueueMutex.lock();
-  expiredQueries.remove(nullptr); // Weak pointers could be set to nullptr if references are removed
-  for (QueryListType::iterator queryIt = this->External->QueryWaitingQueue.begin(); queryIt != this->External->QueryWaitingQueue.end(); ++queryIt)
   {
-    vtkMRMLIGTLQueryNode* queryNode = *queryIt;
-    if (!queryNode)
+    std::lock_guard<std::mutex> lock(this->External->QueryQueueMutex);
+    // Weak pointers are set to nullptr when the query node is deleted from the scene
+    this->External->QueryWaitingQueue.remove(nullptr);
+    for (QueryListType::iterator queryIt = this->External->QueryWaitingQueue.begin(); queryIt != this->External->QueryWaitingQueue.end(); ++queryIt)
     {
-      continue;
-    }
+      vtkMRMLIGTLQueryNode* queryNode = *queryIt;
+      if (!queryNode)
+      {
+        continue;
+      }
 
-    if (queryNode->GetQueryStatus() != vtkMRMLIGTLQueryNode::STATUS_WAITING)
-    {
-      // Query is not pending
-      expiredQueries.push_back(queryNode);
-      continue;
-    }
+      if (queryNode->GetQueryStatus() != vtkMRMLIGTLQueryNode::STATUS_WAITING)
+      {
+        // Query is not pending
+        finishedQueries.push_back(queryNode);
+        continue;
+      }
 
-    double timeout = queryNode->GetTimeOut();
-    if (timeout <= 0.0)
-    {
-      // Query has no timeout
-      continue;
-    }
+      double timeout = queryNode->GetTimeOut();
+      if (timeout <= 0.0)
+      {
+        // Query has no timeout
+        continue;
+      }
 
-    double timeElapsed = vtkTimerLog::GetUniversalTime() - queryNode->GetTimeStamp();
-    if (timeElapsed > timeout)
-    {
-      // Query is expired
-      queryNode->SetQueryStatus(vtkMRMLIGTLQueryNode::STATUS_EXPIRED);
-      expiredQueries.push_back(queryNode);
+      double timeElapsed = vtkTimerLog::GetUniversalTime() - queryNode->GetTimeStamp();
+      if (timeElapsed > timeout)
+      {
+        // Query is expired
+        expiredQueries.push_back(queryNode);
+        finishedQueries.push_back(queryNode);
+      }
     }
   }
-  this->External->QueryQueueMutex.unlock();
 
+  // Node modifications fire Modified() and may re-enter this connector from an observer,
+  // so they are done after the queue mutex has been released.
   for (QueryListType::iterator queryIt = expiredQueries.begin(); queryIt != expiredQueries.end(); ++queryIt)
+  {
+    vtkMRMLIGTLQueryNode* queryNode = *queryIt;
+    if (queryNode)
+    {
+      queryNode->SetQueryStatus(vtkMRMLIGTLQueryNode::STATUS_EXPIRED);
+    }
+  }
+
+  for (QueryListType::iterator queryIt = finishedQueries.begin(); queryIt != finishedQueries.end(); ++queryIt)
   {
     this->RemovePendingQueryNode(*queryIt);
   }
@@ -1036,28 +1054,6 @@ void vtkMRMLIGTLConnectorNode::OnNodeReferenceRemoved(vtkMRMLNodeReference* refe
 }
 
 
-//----------------------------------------------------------------------------
-void vtkMRMLIGTLConnectorNode::OnNodeReferenceModified(vtkMRMLNodeReference* reference)
-{
-  vtkMRMLScene* scene = this->GetScene();
-  if (!scene)
-  {
-    return;
-  }
-
-  vtkMRMLNode* node = scene->GetNodeByID(reference->GetReferencedNodeID());
-  if (!node)
-  {
-    return;
-  }
-  if (strcmp(reference->GetReferenceRole(), this->GetIncomingNodeReferenceRole()) == 0)
-  {
-  }
-  else
-  {
-  }
-}
-
 //---------------------------------------------------------------------------
 bool vtkMRMLIGTLConnectorNode::RegisterIncomingMRMLNode(vtkMRMLNode* node)
 {
@@ -1447,12 +1443,15 @@ int vtkMRMLIGTLConnectorNode::PushQuery(vtkMRMLIGTLQueryNode* node)
   }
 
   this->Internal->IOConnector->SendMessage(key, prefix);
-  this->QueryQueueMutex.lock();
+  {
+    std::lock_guard<std::mutex> lock(this->QueryQueueMutex);
+    this->QueryWaitingQueue.push_back(node);
+  }
+  // Node modifications fire Modified() and may re-enter this connector from an observer,
+  // so they are done after the queue mutex has been released.
   node->SetTimeStamp(vtkTimerLog::GetUniversalTime());
   node->SetQueryStatus(vtkMRMLIGTLQueryNode::STATUS_WAITING);
   node->SetConnectorNodeID(this->GetID());
-  this->QueryWaitingQueue.push_back(node);
-  this->QueryQueueMutex.unlock();
   return 0;
 }
 
@@ -1476,10 +1475,12 @@ void vtkMRMLIGTLConnectorNode::CancelQuery(vtkMRMLIGTLQueryNode* node)
     vtkErrorMacro("vtkMRMLIGTLConnectorNode::CancelQuery failed: invalid input node");
     return;
   }
-  this->QueryQueueMutex.lock();
-  this->QueryWaitingQueue.remove(node);
+  {
+    std::lock_guard<std::mutex> lock(this->QueryQueueMutex);
+    this->QueryWaitingQueue.remove(node);
+  }
+  // Modify the node after the queue mutex has been released (see PushQuery).
   node->SetConnectorNodeID("");
-  this->QueryQueueMutex.unlock();
 }
 
 //---------------------------------------------------------------------------
@@ -1716,6 +1717,12 @@ IGTLDevicePointer vtkMRMLIGTLConnectorNode::CreateDeviceForOutgoingMRMLNode(vtkM
     igtlioDeviceKeyType key;
     key.name = dnode->GetName();
     std::vector<std::string> deviceTypes = this->GetDeviceTypeFromMRMLNodeType(dnode->GetNodeTagName());
+    if (deviceTypes.empty())
+    {
+      vtkErrorMacro("CreateDeviceForOutgoingMRMLNode: no converter registered for node type "
+        << dnode->GetNodeTagName() << " (node " << (dnode->GetID() ? dnode->GetID() : "") << ")");
+      return nullptr;
+    }
     for (size_t typeIndex = 0; typeIndex < deviceTypes.size(); typeIndex++)
     {
       key.type = deviceTypes[typeIndex];
