@@ -2,9 +2,17 @@ set(KIT ${PROJECT_NAME})
 
 #-----------------------------------------------------------------------------
 set(${KIT}_TEST_SRCS
+  vtkIGTLToMRMLConverterMetaDataTest.cxx
   vtkMRMLConnectorCommandSendAndReceiveTest.cxx
   vtkMRMLConnectorImageSendAndReceiveTest.cxx
+  vtkMRMLConnectorQueryQueueTest.cxx
+  vtkMRMLConnectorTransformSendAndReceiveTest.cxx
   )
+if(OpenIGTLink_ENABLE_VIDEOSTREAMING)
+  LIST(APPEND ${KIT}_TEST_SRCS
+    vtkIGTLToMRMLVideoFrameChainTest.cxx
+  )
+endif()
 if(SlicerOpenIGTLink_USE_VP9)
   LIST(APPEND ${KIT}_TEST_SRCS
     vtkMRMLConnectorVideoSendAndReceiveTest.cxx
@@ -22,6 +30,7 @@ list(APPEND Tests ${${KIT}_TEST_SRCS})
 set(${KIT}_TARGET_LIBRARIES
   vtkSlicerOpenIGTLinkIFModuleMRML
   SlicerBaseLogic
+  OpenIGTLink
   )
 
 # Add '--launcher-additional-settings' to launch command,
@@ -36,10 +45,19 @@ endif()
 add_executable(${KIT}CxxTests ${Tests})
 set_target_properties(${KIT}CxxTests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${Slicer_BIN_DIR})
 target_link_libraries(${KIT}CxxTests ${${KIT}_TARGET_LIBRARIES})
+target_include_directories(${KIT}CxxTests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../MRML/IGTLToMRML
+  )
 
 #-----------------------------------------------------------------------------
+simple_test(vtkIGTLToMRMLConverterMetaDataTest)
 simple_test(vtkMRMLConnectorCommandSendAndReceiveTest)
 simple_test(vtkMRMLConnectorImageSendAndReceiveTest)
+simple_test(vtkMRMLConnectorQueryQueueTest)
+simple_test(vtkMRMLConnectorTransformSendAndReceiveTest)
+if(OpenIGTLink_ENABLE_VIDEOSTREAMING)
+  simple_test(vtkIGTLToMRMLVideoFrameChainTest)
+endif()
 if(SlicerOpenIGTLink_USE_VP9)
   simple_test(vtkMRMLConnectorVideoSendAndReceiveTest)
 endif()
