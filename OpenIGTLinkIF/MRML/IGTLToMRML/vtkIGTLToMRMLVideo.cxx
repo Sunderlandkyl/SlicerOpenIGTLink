@@ -120,13 +120,17 @@ void vtkIGTLToMRMLVideo::DeviceToMRMLInternal(igtlioDevice* device,
     return;
   }
 
+  // SetNumberOfValues (not Allocate) so that the array reports the size of the bit stream it holds.
+  int bitStreamSize = videoDevice->GetContent().videoMessage->GetBitStreamSize();
   vtkSmartPointer<vtkUnsignedCharArray> frameData = vtkSmartPointer<vtkUnsignedCharArray>::New();
-  frameData->Allocate(videoDevice->GetContent().videoMessage->GetBitStreamSize());
+  frameData->SetNumberOfValues(bitStreamSize);
   memcpy(frameData->GetPointer(0),
          videoDevice->GetContent().frameData->GetPointer(0),
-         videoDevice->GetContent().videoMessage->GetBitStreamSize());
+         bitStreamSize);
 
-  std::string codecName = videoDevice->GetCurrentCodecType().substr(0, 4);
+  // Use the codec named in the received message. The device's current codec type
+  // is only updated for codecs that igtlio can select, so it may not match.
+  std::string codecName(videoDevice->GetContent().codecName, IGTL_VIDEO_CODEC_NAME_SIZE);
   vtkSmartPointer<vtkStreamingVolumeFrame> frame = vtkSmartPointer<vtkStreamingVolumeFrame>::New();
   frame->SetFrameData(frameData);
   frame->SetFrameType(videoDevice->GetContent().frameType == igtl::FrameTypeKey
